@@ -23,6 +23,9 @@ public class GUIManager {
     }
     
     public void openMainCustomizationGUI(Player player) {
+        // Always remove any existing GUI first to prevent tracking issues
+        openGUIs.remove(player.getUniqueId());
+        
         PlayerData playerData = plugin.getPlayerDataManager().getPlayerData(player.getUniqueId());
         if (playerData == null) {
             player.sendMessage("§cLoading your customization data, please wait...");
@@ -46,6 +49,9 @@ public class GUIManager {
     }
     
     public void openColorSelectionGUI(Player player) {
+        // Always remove any existing GUI first to prevent tracking issues
+        openGUIs.remove(player.getUniqueId());
+        
         PlayerData playerData = plugin.getPlayerDataManager().getPlayerData(player.getUniqueId());
         if (playerData == null) {
             player.sendMessage("§cLoading your customization data, please wait...");
@@ -69,6 +75,9 @@ public class GUIManager {
     }
     
     public void openPrefixSelectionGUI(Player player) {
+        // Always remove any existing GUI first to prevent tracking issues
+        openGUIs.remove(player.getUniqueId());
+        
         PlayerData playerData = plugin.getPlayerDataManager().getPlayerData(player.getUniqueId());
         if (playerData == null) {
             player.sendMessage("§cError loading your customization data. Please try again.");
@@ -81,6 +90,9 @@ public class GUIManager {
     }
     
     public void openGradientBuilderGUI(Player player) {
+        // Always remove any existing GUI first to prevent tracking issues
+        openGUIs.remove(player.getUniqueId());
+        
         PlayerData playerData = plugin.getPlayerDataManager().getPlayerData(player.getUniqueId());
         if (playerData == null) {
             player.sendMessage("§cError loading your customization data. Please try again.");
@@ -98,6 +110,9 @@ public class GUIManager {
     }
     
     public void openAdminGUI(Player player) {
+        // Always remove any existing GUI first to prevent tracking issues
+        openGUIs.remove(player.getUniqueId());
+        
         if (!player.hasPermission("customization.admin")) {
             player.sendMessage("§cYou don't have permission to access the admin GUI!");
             return;

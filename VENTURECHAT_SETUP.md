@@ -3,6 +3,15 @@
 ## Overview
 This plugin integrates with VentureChat through PlaceholderAPI to provide custom name colors, prefixes, and gradients in chat.
 
+## Hybrid Prefix System
+The plugin automatically assigns rank-based prefixes when players get promoted in LuckPerms:
+- **Player rank**: No prefix (blank)
+- **Supporter rank**: `[Supporter]` prefix in white
+- **Patron rank**: `[Patron]` prefix in white  
+- **Devoted rank**: `[Devoted]` prefix in white
+
+Players can then use the GUI to customize their prefix color or choose alternative prefixes available to their rank.
+
 ## Available Placeholders
 
 | Placeholder | Description | Example Output |

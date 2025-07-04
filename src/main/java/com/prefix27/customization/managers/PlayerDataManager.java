@@ -31,7 +31,20 @@ public class PlayerDataManager {
                 String rank = getRankFromLuckPerms(uuid);
                 String username = plugin.getServer().getPlayer(uuid).getName();
                 data = new PlayerData(uuid, username, rank);
+                
+                // Automatically assign rank-based prefix
+                assignDefaultPrefix(data);
+                
                 plugin.getDatabaseManager().savePlayerData(data);
+            } else {
+                // Check if rank changed and update prefix accordingly
+                String currentRank = getRankFromLuckPerms(uuid);
+                if (!currentRank.equals(data.getRank())) {
+                    data.setRank(currentRank);
+                    // Rank changed - update prefix if they don't have a custom one
+                    updateRankBasedPrefix(data);
+                    plugin.getDatabaseManager().savePlayerData(data);
+                }
             }
             
             playerDataCache.put(uuid, data);
@@ -153,6 +166,8 @@ public class PlayerDataManager {
                 
                 // Map LuckPerms groups to our rank system
                 switch (primaryGroup.toLowerCase()) {
+                    case "player":
+                        return "player";
                     case "supporter":
                         return "supporter";
                     case "patron":
@@ -160,7 +175,7 @@ public class PlayerDataManager {
                     case "devoted":
                         return "devoted";
                     default:
-                        return "default";
+                        return "player"; // Default to player rank instead of "default"
                 }
             }
         }
@@ -213,6 +228,41 @@ public class PlayerDataManager {
             });
             
         }, 20L * 60, 20L * 60); // Run every minute
+    }
+    
+    private void assignDefaultPrefix(PlayerData data) {
+        String rank = data.getRank();
+        
+        // Player rank gets no prefix, other ranks get their rank as prefix
+        switch (rank.toLowerCase()) {
+            case "player":
+                data.setCurrentPrefixId(null); // No prefix for player rank
+                break;
+            case "supporter":
+            case "patron":
+            case "devoted":
+                data.setCurrentPrefixId(rank.toLowerCase()); // Set rank as prefix
+                break;
+            default:
+                data.setCurrentPrefixId(null); // Default to no prefix
+                break;
+        }
+    }
+    
+    private void updateRankBasedPrefix(PlayerData data) {
+        // For now, always update prefix when rank changes
+        // Later we could add logic to preserve custom prefixes
+        assignDefaultPrefix(data);
+        
+        // Notify player about the change if they're online
+        org.bukkit.entity.Player player = plugin.getServer().getPlayer(data.getUuid());
+        if (player != null) {
+            if (data.hasPrefix()) {
+                player.sendMessage("§aYour rank changed! You now have the §e" + data.getRank() + "§a prefix.");
+            } else {
+                player.sendMessage("§aYour rank changed to §e" + data.getRank() + "§a.");
+            }
+        }
     }
     
     public void reload() {

@@ -153,7 +153,8 @@ public class PrefixManager {
                 return plugin.getColorManager().applyColor(text, color);
             }
         } else {
-            return Component.text(text);
+            // Default to white color for prefixes when no color specified
+            return plugin.getColorManager().applyColor(text, "white");
         }
     }
     
@@ -247,6 +248,31 @@ public class PrefixManager {
         prefixDefinitions.clear();
         forbiddenWords.clear();
         loadPrefixDefinitions();
+    }
+    
+    public List<String> getAvailablePrefixesForRank(String rank) {
+        List<String> available = new ArrayList<>();
+        
+        // Always include the rank-based prefix if it exists
+        if (prefixDefinitions.containsKey(rank.toLowerCase())) {
+            available.add(rank.toLowerCase());
+        }
+        
+        // Add event prefixes that might be available
+        // TODO: Add logic for event prefixes based on date/season
+        
+        return available;
+    }
+    
+    public boolean hasAccessToPrefix(String rank, String prefixId) {
+        // Players can access their own rank prefix
+        if (prefixId.equals(rank.toLowerCase())) {
+            return true;
+        }
+        
+        // TODO: Add logic for event prefixes and special unlockables
+        
+        return false;
     }
     
     // Inner class for prefix definitions

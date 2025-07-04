@@ -24,6 +24,11 @@ colors:
 
 # Prefix definitions
 prefixes:
+  player:
+    base_text: ""
+    colors: []
+    gradients: []
+    custom_allowed: false
   supporter:
     base_text: "[Supporter]"
     colors: ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan", "white"]
