@@ -146,10 +146,27 @@ public class GUIManager {
         Player player = (Player) event.getWhoClicked();
         UUID playerUUID = player.getUniqueId();
         
+        // Check by title first for safety - ALWAYS cancel our GUI clicks
+        String title = event.getView().getTitle();
+        boolean isOurGUI = title.contains("Customization") || 
+                          title.contains("Color Selection") ||
+                          title.contains("Prefix Selection") ||
+                          title.contains("Gradient Builder") ||
+                          title.contains("Admin") ||
+                          title.contains("Hub");
+        
+        if (isOurGUI) {
+            // CRITICAL: Always cancel clicks in our GUIs to prevent item theft
+            event.setCancelled(true);
+        }
+        
+        // Now handle the actual click if we have a tracked GUI
         CustomizationGUI gui = openGUIs.get(playerUUID);
-        if (gui != null && gui.getInventory().equals(event.getClickedInventory())) {
-            // This is one of our tracked GUIs - handle the click
-            gui.handleClick(event);
+        if (gui != null && isOurGUI) {
+            // Verify it's the right inventory before processing
+            if (gui.getInventory().equals(event.getClickedInventory())) {
+                gui.handleClick(event);
+            }
         }
     }
     

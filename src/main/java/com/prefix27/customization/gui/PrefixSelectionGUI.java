@@ -214,7 +214,10 @@ public class PrefixSelectionGUI extends CustomizationGUI {
         // Handle back button
         if (slot == 45) {
             setTemporaryClose(true);
-            plugin.getGUIManager().openMainCustomizationGUI(player);
+            // Small delay to ensure inventory transition works properly
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                plugin.getGUIManager().openMainCustomizationGUI(player);
+            }, 1L);
             return;
         }
         
@@ -225,7 +228,10 @@ public class PrefixSelectionGUI extends CustomizationGUI {
             playSuccessSound();
             spawnSuccessParticles();
             setTemporaryClose(true);
-            plugin.getGUIManager().openMainCustomizationGUI(player);
+            // Small delay to ensure inventory transition works properly
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                plugin.getGUIManager().openMainCustomizationGUI(player);
+            }, 1L);
             return;
         }
         
@@ -233,7 +239,10 @@ public class PrefixSelectionGUI extends CustomizationGUI {
         if (slot == 48) {
             if (plugin.getPlayerDataManager().canUseCustomPrefix(player.getUniqueId())) {
                 setTemporaryClose(true);
-                plugin.getGUIManager().openGradientBuilderGUI(player);
+                // Small delay to ensure inventory transition works properly
+                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                    plugin.getGUIManager().openGradientBuilderGUI(player);
+                }, 1L);
             } else {
                 player.sendMessage("§cYou need Devoted rank to use custom gradients!");
                 playErrorSound();
@@ -265,7 +274,10 @@ public class PrefixSelectionGUI extends CustomizationGUI {
                     playSuccessSound();
                     spawnApplyChangeParticles();
                     setTemporaryClose(true);
-                    plugin.getGUIManager().openMainCustomizationGUI(player);
+                    // Small delay to ensure inventory transition works properly
+                    plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                        plugin.getGUIManager().openMainCustomizationGUI(player);
+                    }, 1L);
                 } else {
                     player.sendMessage("§cYou don't have permission to use this prefix!");
                     playErrorSound();

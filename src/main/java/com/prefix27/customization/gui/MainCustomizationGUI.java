@@ -128,12 +128,16 @@ public class MainCustomizationGUI extends CustomizationGUI {
         switch (slot) {
             case 10: // Name Colors
                 setTemporaryClose(true);
-                plugin.getGUIManager().openColorSelectionGUI(player);
+                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                    plugin.getGUIManager().openColorSelectionGUI(player);
+                }, 1L);
                 break;
                 
             case 16: // Prefixes
                 setTemporaryClose(true);
-                plugin.getGUIManager().openPrefixSelectionGUI(player);
+                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                    plugin.getGUIManager().openPrefixSelectionGUI(player);
+                }, 1L);
                 break;
                 
             case 22: // Nickname
@@ -148,7 +152,9 @@ public class MainCustomizationGUI extends CustomizationGUI {
             case 4: // Gradient Builder
                 if (plugin.getPlayerDataManager().canUseGradientFeature(player.getUniqueId())) {
                     setTemporaryClose(true);
-                    plugin.getGUIManager().openGradientBuilderGUI(player);
+                    plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                        plugin.getGUIManager().openGradientBuilderGUI(player);
+                    }, 1L);
                 } else {
                     player.sendMessage("§cYou need Patron rank or higher to use gradient colors!");
                     playErrorSound();

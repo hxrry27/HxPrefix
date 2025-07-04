@@ -21,8 +21,7 @@ public abstract class CustomizationGUI {
     public abstract void open();
     
     public final void handleClick(InventoryClickEvent event) {
-        // CRITICAL: Always cancel to prevent item theft
-        event.setCancelled(true);
+        // Event is already cancelled by GUIManager for safety
         onInventoryClick(event);
     }
     
