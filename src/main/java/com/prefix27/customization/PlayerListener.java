@@ -15,11 +15,13 @@ public class PlayerListener implements Listener {
     
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        // Get their data ready when they join
-        plugin.getPlayerDataManager().loadPlayerData(event.getPlayer().getUniqueId());
+        // Force refresh data from database on server switch for cross-server sync
+        plugin.getPlayerDataManager().refreshPlayerData(event.getPlayer().getUniqueId());
         
         // Make sure we have their current username
         plugin.getPlayerDataManager().updatePlayerUsername(event.getPlayer().getUniqueId(), event.getPlayer().getName());
+        
+        plugin.getLogger().info("Player " + event.getPlayer().getName() + " joined - refreshing data for cross-server sync");
     }
     
     @EventHandler

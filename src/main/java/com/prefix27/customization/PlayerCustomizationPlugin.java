@@ -151,6 +151,11 @@ public class PlayerCustomizationPlugin extends JavaPlugin {
         
         // Handle chat input for custom prefix requests
         getServer().getPluginManager().registerEvents(chatInputManager, this);
+        
+        // Register fallback chat listener for cross-server formatting
+        // This ensures chat formatting works even if VentureChat isn't configured properly
+        getServer().getPluginManager().registerEvents(new ChatListener(this), this);
+        getLogger().info("Registered fallback chat listener for cross-server formatting");
     }
 
     public void reloadPluginConfig() {

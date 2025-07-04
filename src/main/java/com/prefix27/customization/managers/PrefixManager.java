@@ -46,11 +46,26 @@ public class PrefixManager {
             for (String eventName : eventConfig.getKeys(false)) {
                 ConfigurationSection eventSection = eventConfig.getConfigurationSection(eventName);
                 if (eventSection != null) {
-                    String text = eventSection.getString("text", "[" + eventName + "]");
+                    String text = eventSection.getString("text", eventName);
+                    
+                    // Make text uppercase and add brackets
+                    String formattedText = "[" + text.toUpperCase() + "]";
+                    
+                    // Support both old colors format and new gradient format
                     List<String> colors = eventSection.getStringList("colors");
+                    List<String> gradients = new ArrayList<>();
+                    
+                    // Check for gradient definition
+                    String gradient = eventSection.getString("gradient");
+                    if (gradient != null && !gradient.isEmpty()) {
+                        gradients.add(gradient);
+                        // Also add the gradient as a "color" option for backward compatibility
+                        colors.add("gradient_" + gradient.replace(":", "_to_"));
+                    }
+                    
                     List<String> availableDates = eventSection.getStringList("available_dates");
                     
-                    PrefixDefinition definition = new PrefixDefinition("event_" + eventName, text, colors, new ArrayList<>(), false);
+                    PrefixDefinition definition = new PrefixDefinition("event_" + eventName, formattedText, colors, gradients, false);
                     definition.setEventPrefix(true);
                     definition.setAvailableDates(availableDates);
                     prefixDefinitions.put("event_" + eventName, definition);
@@ -94,9 +109,19 @@ public class PrefixManager {
                     String eventKey = entry.getKey();
                     PrefixDefinition eventDef = entry.getValue();
                     
-                    // Add color variants for event prefixes
+                    // Add gradient variants for event prefixes (primary)
+                    List<String> gradients = eventDef.getGradients();
+                    if (!gradients.isEmpty()) {
+                        for (String gradient : gradients) {
+                            availablePrefixes.add(eventKey + "_gradient_" + gradient.replace(":", "_to_"));
+                        }
+                    }
+                    
+                    // Add color variants for event prefixes (fallback/additional)
                     for (String color : eventDef.getColors()) {
-                        availablePrefixes.add(eventKey + "_" + color);
+                        if (!color.startsWith("gradient_")) { // Skip the gradient entries we added for backward compatibility
+                            availablePrefixes.add(eventKey + "_" + color);
+                        }
                     }
                 }
             }
@@ -199,16 +224,16 @@ public class PrefixManager {
         String useGradient = overrideGradient != null ? overrideGradient : embeddedGradient;
         
         if (useGradient != null && !useGradient.isEmpty()) {
-            return plugin.getColorManager().applyGradient(text, useGradient);
+            return plugin.getColorManager().applyGradientToPrefix(text, useGradient);
         } else if (useColor != null && !useColor.isEmpty()) {
             if (useColor.equals("rainbow")) {
-                return plugin.getColorManager().createRainbowText(text);
+                return plugin.getColorManager().createRainbowTextForPrefix(text);
             } else {
-                return plugin.getColorManager().applyColor(text, useColor);
+                return plugin.getColorManager().applyColorToPrefix(text, useColor);
             }
         } else {
             // Default to white color for prefixes when no color specified
-            return plugin.getColorManager().applyColor(text, "white");
+            return plugin.getColorManager().applyColorToPrefix(text, "white");
         }
     }
     

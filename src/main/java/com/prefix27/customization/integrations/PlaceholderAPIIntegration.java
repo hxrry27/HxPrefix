@@ -62,7 +62,13 @@ public class PlaceholderAPIIntegration extends PlaceholderExpansion {
         
         PlayerData playerData = plugin.getPlayerDataManager().getPlayerData(player.getUniqueId());
         if (playerData == null) {
+            plugin.getLogger().warning("PlaceholderAPI called for " + player.getName() + " but no cached data! Placeholder: " + params);
             return "";
+        }
+        
+        // Debug logging for cross-server testing
+        if (params.equals("prefix") || params.equals("full")) {
+            plugin.getLogger().info("PlaceholderAPI " + params + " for " + player.getName() + ": prefix=" + playerData.getCurrentPrefixId() + ", color=" + playerData.getCurrentNameColor());
         }
         
         switch (params.toLowerCase()) {

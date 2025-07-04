@@ -54,19 +54,50 @@ prefixes:
     custom_allowed: true
 
 # Event prefixes (available to all ranks when earned)
+# 
+# TO ADD A NEW TAG: Just add a new section with:
+#   text: "YourWord"           - The word for the tag
+#   gradient: "color1:color2"  - Two colors for the gradient
+#   available_dates: ["month"] - Optional: when it's available (remove for always)
+#
+# The system will automatically:
+#   - Make it BOLD and UPPERCASE: [YOURWORD]
+#   - Apply the gradient colors
+#   - Make it available to all ranks
+#
+# Available colors: 
+#   Named: red, blue, green, yellow, purple, orange, pink, cyan, white, gray, black, gold, lime, aqua
+#   Hex: #FF0000, #00FF00, #0000FF, etc. (any #RRGGBB format)
+#
 event_prefixes:
   pride:
-    text: "[Pride]"
-    colors: ["rainbow"]
+    text: "Pride"
+    gradient: "red:purple"  # Simple gradient definition
     available_dates: ["june"]
   halloween:
-    text: "[Spooky]"
-    colors: ["orange", "black"]
+    text: "Spooky"
+    gradient: "orange:black"
     available_dates: ["october"]
   christmas:
-    text: "[Festive]"
-    colors: ["red", "green"]
+    text: "Festive" 
+    gradient: "red:green"
     available_dates: ["december"]
+  cool:
+    text: "Cool"
+    gradient: "blue:cyan"
+    # No available_dates means always available
+  epic:
+    text: "Epic"
+    gradient: "purple:pink"
+  vip:
+    text: "VIP"
+    gradient: "gold:yellow"
+  legend:
+    text: "Legend"
+    gradient: "red:orange"
+  neon:
+    text: "Neon"
+    gradient: "#FF00FF:#00FFFF"  # Example with hex colors
 
 # Cache settings
 cache:

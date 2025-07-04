@@ -73,12 +73,41 @@ public class ColorManager {
     public Component applyColor(String text, String colorName) {
         TextColor color = getColor(colorName);
         if (color != null) {
+            return Component.text(text).color(color);
+        }
+        return Component.text(text);
+    }
+    
+    public Component applyGradient(String text, String gradientString) {
+        if (gradientString == null || !gradientString.contains(":")) {
+            return Component.text(text);
+        }
+        
+        String[] colors = gradientString.split(":");
+        if (colors.length != 2) {
+            return Component.text(text);
+        }
+        
+        TextColor startColor = getColor(colors[0]);
+        TextColor endColor = getColor(colors[1]);
+        
+        if (startColor == null || endColor == null) {
+            return Component.text(text);
+        }
+        
+        return createGradientText(text, startColor, endColor);
+    }
+    
+    // Special methods for prefixes that should be bold
+    public Component applyColorToPrefix(String text, String colorName) {
+        TextColor color = getColor(colorName);
+        if (color != null) {
             return Component.text(text).color(color).decorate(TextDecoration.BOLD);
         }
         return Component.text(text).decorate(TextDecoration.BOLD);
     }
     
-    public Component applyGradient(String text, String gradientString) {
+    public Component applyGradientToPrefix(String text, String gradientString) {
         if (gradientString == null || !gradientString.contains(":")) {
             return Component.text(text).decorate(TextDecoration.BOLD);
         }
@@ -96,6 +125,10 @@ public class ColorManager {
         }
         
         return createGradientText(text, startColor, endColor).decorate(TextDecoration.BOLD);
+    }
+    
+    public Component createRainbowTextForPrefix(String text) {
+        return createRainbowText(text).decorate(TextDecoration.BOLD);
     }
     
     private Component createGradientText(String text, TextColor startColor, TextColor endColor) {
