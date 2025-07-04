@@ -34,7 +34,7 @@ public class ColorManager {
         colorMap.put("purple", NamedTextColor.DARK_PURPLE);
         colorMap.put("orange", NamedTextColor.GOLD);
         colorMap.put("pink", NamedTextColor.LIGHT_PURPLE);
-        colorMap.put("cyan", NamedTextColor.CYAN);
+        colorMap.put("cyan", NamedTextColor.AQUA);
         colorMap.put("white", NamedTextColor.WHITE);
         colorMap.put("gray", NamedTextColor.GRAY);
         colorMap.put("black", NamedTextColor.BLACK);
@@ -102,7 +102,7 @@ public class ColorManager {
             return Component.text(text).color(startColor);
         }
         
-        Component.Builder builder = Component.text();
+        var builder = Component.text();
         
         for (int i = 0; i < text.length(); i++) {
             float ratio = (float) i / (text.length() - 1);
@@ -130,7 +130,7 @@ public class ColorManager {
     }
     
     public Component createRainbowText(String text) {
-        Component.Builder builder = Component.text();
+        var builder = Component.text();
         TextColor[] rainbowColors = {
             NamedTextColor.RED,
             NamedTextColor.GOLD,

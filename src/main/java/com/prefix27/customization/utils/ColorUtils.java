@@ -95,7 +95,7 @@ public class ColorUtils {
             return Component.text(text).color(startColor);
         }
         
-        Component.Builder builder = Component.text();
+        var builder = Component.text();
         
         for (int i = 0; i < text.length(); i++) {
             float ratio = (float) i / (text.length() - 1);

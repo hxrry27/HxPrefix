@@ -27,7 +27,7 @@ public class MainCustomizationGUI extends CustomizationGUI {
         inventory = Bukkit.createInventory(null, 27, "§6§lCustomization Hub");
         
         // Name Colors (slot 10)
-        ItemStack nameColorItem = new ItemStack(Material.DYE, 1);
+        ItemStack nameColorItem = new ItemStack(Material.REDSTONE, 1);
         ItemMeta nameColorMeta = nameColorItem.getItemMeta();
         nameColorMeta.setDisplayName("§e§lName Colors");
         nameColorMeta.setLore(Arrays.asList(

@@ -56,7 +56,7 @@ public class VentureChatIntegration implements Listener {
     }
     
     private Component buildFullNameComponent(PlayerData playerData) {
-        Component.Builder builder = Component.text();
+        var builder = Component.text();
         
         // Add prefix if available
         if (playerData.hasPrefix()) {
