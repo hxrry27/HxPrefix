@@ -3,6 +3,7 @@ package com.prefix27.customization;
 import com.prefix27.customization.commands.*;
 import com.prefix27.customization.database.DatabaseManager;
 import com.prefix27.customization.managers.*;
+import com.prefix27.customization.managers.ChatInputManager;
 import com.prefix27.customization.integrations.LuckPermsIntegration;
 import com.prefix27.customization.integrations.PlaceholderAPIIntegration;
 import com.prefix27.customization.integrations.VentureChatIntegration;
@@ -17,6 +18,7 @@ public class PlayerCustomizationPlugin extends JavaPlugin {
     private PrefixManager prefixManager;
     private ColorManager colorManager;
     private GUIManager guiManager;
+    private ChatInputManager chatInputManager;
     
     private LuckPermsIntegration luckPermsIntegration;
     private PlaceholderAPIIntegration placeholderAPIIntegration;
@@ -78,6 +80,7 @@ public class PlayerCustomizationPlugin extends JavaPlugin {
             prefixManager = new PrefixManager(this);
             colorManager = new ColorManager(this);
             guiManager = new GUIManager(this);
+            chatInputManager = new ChatInputManager(this);
             
             return true;
         } catch (Exception e) {
@@ -145,6 +148,9 @@ public class PlayerCustomizationPlugin extends JavaPlugin {
         
         // Handle GUI interactions
         getServer().getPluginManager().registerEvents(new GUIListener(this), this);
+        
+        // Handle chat input for custom prefix requests
+        getServer().getPluginManager().registerEvents(chatInputManager, this);
     }
 
     public void reloadPluginConfig() {
@@ -162,6 +168,9 @@ public class PlayerCustomizationPlugin extends JavaPlugin {
         }
         if (guiManager != null) {
             guiManager.reload();
+        }
+        if (chatInputManager != null) {
+            chatInputManager.reload();
         }
     }
 
@@ -184,6 +193,10 @@ public class PlayerCustomizationPlugin extends JavaPlugin {
 
     public GUIManager getGUIManager() {
         return guiManager;
+    }
+
+    public ChatInputManager getChatInputManager() {
+        return chatInputManager;
     }
 
     public LuckPermsIntegration getLuckPermsIntegration() {

@@ -146,20 +146,9 @@ public class GUIManager {
         Player player = (Player) event.getWhoClicked();
         UUID playerUUID = player.getUniqueId();
         
-        // Check if this is one of our GUI inventories by title pattern
-        String title = event.getView().getTitle();
-        if (title.contains("Customization") || 
-            title.contains("Color Selection") ||
-            title.contains("Prefix Selection") ||
-            title.contains("Gradient Builder") ||
-            title.contains("Admin") ||
-            title.contains("Hub")) {
-            // ALWAYS cancel clicks on our GUIs to prevent item theft
-            event.setCancelled(true);
-        }
-        
         CustomizationGUI gui = openGUIs.get(playerUUID);
-        if (gui != null) {
+        if (gui != null && gui.getInventory().equals(event.getClickedInventory())) {
+            // This is one of our tracked GUIs - handle the click
             gui.handleClick(event);
         }
     }

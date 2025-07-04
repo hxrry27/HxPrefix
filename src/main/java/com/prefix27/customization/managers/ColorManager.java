@@ -5,6 +5,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 import java.util.HashMap;
 import java.util.List;
@@ -72,29 +73,29 @@ public class ColorManager {
     public Component applyColor(String text, String colorName) {
         TextColor color = getColor(colorName);
         if (color != null) {
-            return Component.text(text).color(color);
+            return Component.text(text).color(color).decorate(TextDecoration.BOLD);
         }
-        return Component.text(text);
+        return Component.text(text).decorate(TextDecoration.BOLD);
     }
     
     public Component applyGradient(String text, String gradientString) {
         if (gradientString == null || !gradientString.contains(":")) {
-            return Component.text(text);
+            return Component.text(text).decorate(TextDecoration.BOLD);
         }
         
         String[] colors = gradientString.split(":");
         if (colors.length != 2) {
-            return Component.text(text);
+            return Component.text(text).decorate(TextDecoration.BOLD);
         }
         
         TextColor startColor = getColor(colors[0]);
         TextColor endColor = getColor(colors[1]);
         
         if (startColor == null || endColor == null) {
-            return Component.text(text);
+            return Component.text(text).decorate(TextDecoration.BOLD);
         }
         
-        return createGradientText(text, startColor, endColor);
+        return createGradientText(text, startColor, endColor).decorate(TextDecoration.BOLD);
     }
     
     private Component createGradientText(String text, TextColor startColor, TextColor endColor) {
@@ -191,13 +192,19 @@ public class ColorManager {
         }
     }
     
+    public String componentToColoredString(Component component) {
+        // Convert Component to legacy colored string for display in lore
+        LegacyComponentSerializer serializer = LegacyComponentSerializer.legacySection();
+        return serializer.serialize(component);
+    }
+    
     public String previewColor(String playerName, String color) {
         if (color == null || color.isEmpty()) {
             return playerName;
         }
         
         Component component = applyColor(playerName, color);
-        return component.toString(); // This is a simplified preview
+        return componentToColoredString(component);
     }
     
     public String previewGradient(String playerName, String gradient) {
@@ -206,7 +213,7 @@ public class ColorManager {
         }
         
         Component component = applyGradient(playerName, gradient);
-        return component.toString(); // This is a simplified preview
+        return componentToColoredString(component);
     }
     
     public void reload() {

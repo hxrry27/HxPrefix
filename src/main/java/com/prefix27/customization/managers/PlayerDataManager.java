@@ -25,6 +25,7 @@ public class PlayerDataManager {
     }
     
     public void loadPlayerData(UUID uuid) {
+        // Always refresh from database for cross-server sync
         plugin.getDatabaseManager().getPlayerData(uuid).thenAccept(data -> {
             if (data == null) {
                 // Create new player data
@@ -36,6 +37,7 @@ public class PlayerDataManager {
                 assignDefaultPrefix(data);
                 
                 plugin.getDatabaseManager().savePlayerData(data);
+                plugin.getLogger().info("Created new player data for " + username + " (" + uuid + ") with rank " + rank);
             } else {
                 // Check if rank changed and update prefix accordingly
                 String currentRank = getRankFromLuckPerms(uuid);
@@ -44,12 +46,20 @@ public class PlayerDataManager {
                     // Rank changed - update prefix if they don't have a custom one
                     updateRankBasedPrefix(data);
                     plugin.getDatabaseManager().savePlayerData(data);
+                    plugin.getLogger().info("Updated rank for " + data.getUsername() + " from " + data.getRank() + " to " + currentRank);
                 }
+                plugin.getLogger().info("Loaded player data for " + data.getUsername() + " (" + uuid + ") - Color: " + data.getCurrentNameColor() + ", Prefix: " + data.getCurrentPrefixId());
             }
             
             playerDataCache.put(uuid, data);
             lastAccessed.put(uuid, System.currentTimeMillis());
         });
+    }
+    
+    public void refreshPlayerData(UUID uuid) {
+        // Force refresh from database - useful for cross-server sync
+        playerDataCache.remove(uuid);
+        loadPlayerData(uuid);
     }
     
     public void savePlayerData(UUID uuid) {

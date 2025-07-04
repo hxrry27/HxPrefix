@@ -166,10 +166,22 @@ public class PrefixManager {
                 embeddedGradient = parts[1].replace("_to_", ":");
             }
         } else if (fullPrefixId.contains("_")) {
-            String[] parts = fullPrefixId.split("_", 2);
-            basePrefixId = parts[0];
-            if (parts.length > 1 && !parts[1].equals("gradient")) {
-                embeddedColor = parts[1];
+            // Handle event prefixes like "event_pride_rainbow"
+            if (fullPrefixId.startsWith("event_")) {
+                String[] parts = fullPrefixId.split("_", 3);
+                if (parts.length >= 3) {
+                    basePrefixId = parts[0] + "_" + parts[1]; // "event_pride"
+                    embeddedColor = parts[2]; // "rainbow"
+                } else {
+                    basePrefixId = fullPrefixId;
+                }
+            } else {
+                // Regular rank prefixes like "supporter_red"
+                String[] parts = fullPrefixId.split("_", 2);
+                basePrefixId = parts[0];
+                if (parts.length > 1 && !parts[1].equals("gradient")) {
+                    embeddedColor = parts[1];
+                }
             }
         } else {
             basePrefixId = fullPrefixId;
@@ -202,10 +214,7 @@ public class PrefixManager {
     
     public String previewPrefix(String fullPrefixId, String overrideColor, String overrideGradient, String playerName) {
         Component prefixComponent = formatPrefix(fullPrefixId, overrideColor, overrideGradient);
-        Component nameComponent = Component.text(playerName);
-        
-        Component fullComponent = prefixComponent.append(Component.text(" ")).append(nameComponent).append(Component.text(": Hello world!"));
-        return fullComponent.toString(); // Simplified preview - would need proper Adventure text serialization for actual display
+        return plugin.getColorManager().componentToColoredString(prefixComponent);
     }
     
     public boolean canUsePrefix(UUID uuid, String prefixId) {
@@ -267,8 +276,8 @@ public class PrefixManager {
     }
     
     public void requestCustomPrefix(UUID uuid, String prefixText) {
-        // Will implement database insertion for custom_prefix_requests table
-        // For now, just log it
+        // Insert into custom_prefix_requests table
+        plugin.getDatabaseManager().insertCustomPrefixRequest(uuid, prefixText);
         plugin.getLogger().info("Custom prefix request from " + uuid + ": " + prefixText);
     }
     

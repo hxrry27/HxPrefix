@@ -3,10 +3,10 @@ database:
   # SQLite settings (when type is "sqlite")
   file: "../../shared-data/customization.db"
   # MySQL settings (when type is "mysql")
-  host: "mysql"  # Docker service name or IP
+  host: "customisation-mysql"  # Docker service name
   port: 3306
-  database: "player_customization"
-  username: "minecraft"
+  database: "playercustomisation"
+  username: "playercustomisation"
   password: "minecraft_password"
   # Common settings
   connection_pool_size: 10

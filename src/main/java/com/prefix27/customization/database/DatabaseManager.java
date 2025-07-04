@@ -33,14 +33,19 @@ public class DatabaseManager {
                 // MySQL connection
                 String host = plugin.getConfig().getString("database.host", "localhost");
                 int port = plugin.getConfig().getInt("database.port", 3306);
-                String database = plugin.getConfig().getString("database.database", "player_customization");
-                String username = plugin.getConfig().getString("database.username", "minecraft");
+                String database = plugin.getConfig().getString("database.database", "playercustomisation");
+                String username = plugin.getConfig().getString("database.username", "playercustomisation");
                 String password = plugin.getConfig().getString("database.password", "");
                 
-                String url = String.format("jdbc:mysql://%s:%d/%s?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true", 
+                String url = String.format("jdbc:mysql://%s:%d/%s?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&autoReconnect=true&maxReconnects=3&initialTimeout=10&useUnicode=true&characterEncoding=UTF-8", 
                     host, port, database);
                     
                 connection = DriverManager.getConnection(url, username, password);
+                
+                // Test the connection
+                if (!connection.isValid(10)) {
+                    throw new SQLException("MySQL connection validation failed");
+                }
                 plugin.getLogger().info("Connected to MySQL database: " + database);
                 
             } else {
@@ -169,12 +174,21 @@ public class DatabaseManager {
     }
     
     private void prepareStatements() throws SQLException {
+        String dbType = plugin.getConfig().getString("database.type", "sqlite");
+        boolean isMySQL = dbType.equalsIgnoreCase("mysql");
+        
         // Player data queries
         preparedStatements.put("SELECT_PLAYER", connection.prepareStatement(
             "SELECT * FROM players WHERE uuid = ?"));
         
-        preparedStatements.put("INSERT_PLAYER", connection.prepareStatement(
-            "INSERT OR REPLACE INTO players (uuid, username, rank) VALUES (?, ?, ?)"));
+        // Use different syntax for MySQL vs SQLite
+        if (isMySQL) {
+            preparedStatements.put("INSERT_PLAYER", connection.prepareStatement(
+                "INSERT INTO players (uuid, username, rank) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE username = VALUES(username), rank = VALUES(rank), updated_at = CURRENT_TIMESTAMP"));
+        } else {
+            preparedStatements.put("INSERT_PLAYER", connection.prepareStatement(
+                "INSERT OR REPLACE INTO players (uuid, username, rank) VALUES (?, ?, ?)"));
+        }
         
         preparedStatements.put("UPDATE_PLAYER_USERNAME", connection.prepareStatement(
             "UPDATE players SET username = ?, updated_at = CURRENT_TIMESTAMP WHERE uuid = ?"));
@@ -213,6 +227,9 @@ public class DatabaseManager {
         // Analytics queries
         preparedStatements.put("INSERT_ANALYTICS", connection.prepareStatement(
             "INSERT INTO usage_analytics (player_uuid, action_type, old_value, new_value) VALUES (?, ?, ?, ?)"));
+        
+        preparedStatements.put("INSERT_CUSTOM_PREFIX_REQUEST", connection.prepareStatement(
+            "INSERT INTO custom_prefix_requests (player_uuid, requested_text) VALUES (?, ?)"));
     }
     
     public CompletableFuture<PlayerData> getPlayerData(UUID uuid) {
@@ -359,6 +376,20 @@ public class DatabaseManager {
                 stmt.executeUpdate();
             } catch (SQLException e) {
                 plugin.getLogger().log(Level.SEVERE, "Error logging analytics", e);
+            }
+        }, executor);
+    }
+    
+    public CompletableFuture<Void> insertCustomPrefixRequest(UUID uuid, String prefixText) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                PreparedStatement stmt = preparedStatements.get("INSERT_CUSTOM_PREFIX_REQUEST");
+                stmt.setString(1, uuid.toString());
+                stmt.setString(2, prefixText);
+                stmt.executeUpdate();
+                plugin.getLogger().info("Inserted custom prefix request for " + uuid + ": " + prefixText);
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Error inserting custom prefix request", e);
             }
         }, executor);
     }

@@ -10,6 +10,7 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -28,16 +29,42 @@ public class PrefixSelectionGUI extends CustomizationGUI {
         
         List<String> availablePrefixes = plugin.getPrefixManager().getAvailablePrefixes(player.getUniqueId());
         
-        int slot = 0;
+        // Separate rank prefixes from event prefixes
+        List<String> rankPrefixes = new ArrayList<>();
+        List<String> eventPrefixes = new ArrayList<>();
+        
         for (String prefixId : availablePrefixes) {
-            if (slot >= 45) break; // Leave space for navigation
-            
+            if (prefixId.startsWith("event_")) {
+                eventPrefixes.add(prefixId);
+            } else {
+                rankPrefixes.add(prefixId);
+            }
+        }
+        
+        // Add rank prefixes first
+        int slot = 0;
+        for (String prefixId : rankPrefixes) {
+            if (slot >= 27) break; // Leave space for event section
             addPrefixOption(prefixId, slot);
             slot++;
         }
         
-        // Add custom prefix request option for Devoted players
+        // Add separator line if we have event prefixes
+        if (!eventPrefixes.isEmpty()) {
+            addSeparator(27);
+            
+            // Add event prefixes starting from row 4
+            slot = 28;
+            for (String prefixId : eventPrefixes) {
+                if (slot >= 45) break; // Leave space for navigation
+                addPrefixOption(prefixId, slot);
+                slot++;
+            }
+        }
+        
+        // Add custom options for Devoted players
         if (plugin.getPlayerDataManager().canUseCustomPrefix(player.getUniqueId())) {
+            addCustomGradientOption();
             addCustomPrefixOption();
         }
         
@@ -64,11 +91,11 @@ public class PrefixSelectionGUI extends CustomizationGUI {
         
         meta.setDisplayName(displayName);
         
-        // Create lore with preview
+        // Create lore with just the preview
+        String preview = plugin.getPrefixManager().previewPrefix(fullPrefixId, null, null, playerData.getDisplayName());
         List<String> lore = Arrays.asList(
-            "§7Type: " + getPrefixTypeDescription(fullPrefixId),
             "",
-            "§7Preview: " + plugin.getPrefixManager().previewPrefix(fullPrefixId, null, null, playerData.getDisplayName()),
+            preview,
             "",
             "§eClick to select this prefix!"
         );
@@ -106,12 +133,39 @@ public class PrefixSelectionGUI extends CustomizationGUI {
         }
     }
     
+    private void addSeparator(int slot) {
+        ItemStack separator = new ItemStack(Material.GRAY_STAINED_GLASS_PANE, 1);
+        ItemMeta separatorMeta = separator.getItemMeta();
+        separatorMeta.setDisplayName("§7§l---- Event Prefixes ----");
+        separatorMeta.setLore(Arrays.asList("§7Special prefixes available to all ranks"));
+        separator.setItemMeta(separatorMeta);
+        
+        // Fill the entire row
+        for (int i = 0; i < 9; i++) {
+            inventory.setItem(slot + i, separator);
+        }
+    }
+    
+    private void addCustomGradientOption() {
+        ItemStack gradientItem = new ItemStack(Material.ENCHANTED_BOOK, 1);
+        ItemMeta gradientMeta = gradientItem.getItemMeta();
+        gradientMeta.setDisplayName("§d§lCustom Gradient Builder");
+        gradientMeta.setLore(Arrays.asList(
+            "§7Create your own gradient for any prefix",
+            "§7Available to Devoted rank only",
+            "",
+            "§eClick to open gradient builder!"
+        ));
+        gradientItem.setItemMeta(gradientMeta);
+        inventory.setItem(48, gradientItem);
+    }
+    
     private void addCustomPrefixOption() {
         ItemStack customItem = new ItemStack(Material.WRITABLE_BOOK, 1);
         ItemMeta customMeta = customItem.getItemMeta();
         customMeta.setDisplayName("§6§lRequest Custom Prefix");
         customMeta.setLore(Arrays.asList(
-            "§7Request a custom prefix",
+            "§7Request a completely custom prefix",
             "§7Requires staff approval",
             "",
             "§7Cooldown: §f30 days between requests",
@@ -175,13 +229,23 @@ public class PrefixSelectionGUI extends CustomizationGUI {
             return;
         }
         
+        // Handle custom gradient builder
+        if (slot == 48) {
+            if (plugin.getPlayerDataManager().canUseCustomPrefix(player.getUniqueId())) {
+                setTemporaryClose(true);
+                plugin.getGUIManager().openGradientBuilderGUI(player);
+            } else {
+                player.sendMessage("§cYou need Devoted rank to use custom gradients!");
+                playErrorSound();
+            }
+            return;
+        }
+        
         // Handle custom prefix request
         if (slot == 49) {
             if (plugin.getPlayerDataManager().canUseCustomPrefix(player.getUniqueId())) {
-                player.sendMessage("§aPlease enter your custom prefix in chat:");
-                player.sendMessage("§7It will be reviewed by staff for approval.");
-                // Need to add chat input handling system
                 close();
+                plugin.getChatInputManager().requestCustomPrefixInput(player);
             } else {
                 player.sendMessage("§cYou need Devoted rank to request custom prefixes!");
                 playErrorSound();
