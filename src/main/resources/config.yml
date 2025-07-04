@@ -1,0 +1,68 @@
+mysql:
+  host: customisation-mysql
+  port: 3306
+  database: playercustomisation
+  username: playercustomisation
+  password: "4srDSUWzYy!0swf0k6uJGzHk*V#cZ4tQh82XzHVQYZfBrydynjcd2&Ca74ktnQ^J"
+  pool-size: 10
+
+# Color options for /color command
+colors:
+  supporter:
+    - name: "&cRed"
+      value: "&c"
+    - name: "&aGreen"
+      value: "&a"
+    - name: "&bAqua"
+      value: "&b"
+    - name: "&dPink"
+      value: "&d"
+    - name: "&eYellow"
+      value: "&e"
+    - name: "&fWhite"
+      value: "&f"
+  
+  patron: # Includes all supporter colors plus:
+    gradients:
+      - name: "Fire"
+        value: "<gradient:#ff0000:#ffff00>"
+      - name: "Ocean"
+        value: "<gradient:#0080ff:#00ffff>"
+      - name: "Nature"
+        value: "<gradient:#00ff00:#ffff00>"
+      - name: "Galaxy"
+        value: "<gradient:#8b00ff:#ff00ff>"
+
+# Prefix style options
+prefix-styles:
+  supporter:
+    - name: "&c[&fSUPPORTER&c]"
+      value: "&c[&fSUPPORTER&c]"
+    - name: "&a[&fSUPPORTER&a]"
+      value: "&a[&fSUPPORTER&a]"
+    - name: "&b[&fSUPPORTER&b]"
+      value: "&b[&fSUPPORTER&b]"
+  
+  patron: # Includes all supporter styles plus:
+    - name: "<gradient:#ff0000:#ffff00>[PATRON]</gradient>"
+      value: "<gradient:#ff0000:#ffff00>[PATRON]</gradient>"
+    - name: "<gradient:#0080ff:#00ffff>[PATRON]</gradient>"
+      value: "<gradient:#0080ff:#00ffff>[PATRON]</gradient>"
+  
+  devoted: # Includes all patron styles plus:
+    - name: "<gradient:#ff00ff:#00ffff>[DEVOTED]</gradient>"
+      value: "<gradient:#ff00ff:#00ffff>[DEVOTED]</gradient>"
+    - name: "<rainbow>[DEVOTED]</rainbow>"
+      value: "<rainbow>[DEVOTED]</rainbow>"
+
+messages:
+  prefix: "&8[&bPlayerCustom&8] "
+  no-permission: "&cYou don't have permission to use this command!"
+  color-changed: "&aYour name color has been updated!"
+  prefix-changed: "&aYour prefix has been updated!"
+  nickname-changed: "&aYour nickname has been changed to: &f%nickname%"
+  nickname-reset: "&aYour nickname has been reset!"
+  invalid-nickname: "&cNickname must be 3-16 characters and alphanumeric!"
+  tag-requested: "&aYour custom tag request has been submitted for review!"
+  tag-approved: "&aYour custom tag '%tag%' has been approved!"
+  tag-denied: "&cYour custom tag request has been denied."

@@ -1,0 +1,57 @@
+name: PlayerCustomisation
+version: '${project.version}'
+main: com.yourserver.playercustomisation.PlayerCustomisation
+api-version: '1.21'
+authors: [YourServer]
+description: Simple player customisation plugin
+depend: [LuckPerms]
+softdepend: [PlaceholderAPI]
+
+commands:
+  color:
+    description: Opens color selection GUI
+    usage: /<command>
+    permission: playercustomisation.color
+  prefix:
+    description: Opens prefix selection GUI  
+    usage: /<command>
+    permission: playercustomisation.prefix
+  nick:
+    description: Sets or removes nickname
+    usage: /<command> <nickname|off>
+    permission: playercustomisation.nick
+  requesttag:
+    description: Request custom tag
+    usage: /<command> <tag>
+    permission: playercustomisation.customtag
+  managetags:
+    description: Staff command to review tags
+    usage: /<command>
+    permission: playercustomisation.admin.tags
+  pcreload:
+    description: Reload configuration
+    usage: /<command>
+    permission: playercustomisation.admin.reload
+  pc-internal:
+    description: Internal command for GUI interactions
+    usage: /<command>
+
+permissions:
+  playercustomisation.color:
+    default: false
+    description: Access to /color command
+  playercustomisation.prefix:
+    default: false
+    description: Access to /prefix command
+  playercustomisation.nick:
+    default: false
+    description: Access to /nick command
+  playercustomisation.customtag:
+    default: false
+    description: Access to request custom tags
+  playercustomisation.admin.tags:
+    default: op
+    description: Manage custom tag requests
+  playercustomisation.admin.reload:
+    default: op
+    description: Reload plugin configuration

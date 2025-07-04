@@ -1,0 +1,149 @@
+menu_title: '&d&lPrefix Selection &7(Patron)'
+menu_size: 54
+open_requirement:
+  requirements:
+    patron_rank:
+      type: has_permission
+      permission: playercustomisation.prefix
+      deny_commands:
+      - '[message] &cYou don''t have permission to use this!'
+
+items:
+  # Solid Prefixes Section
+  solid_title:
+    material: NAME_TAG
+    slot: 4
+    display_name: '&6&lSolid Color Prefixes'
+    lore:
+    - '&7Choose a solid color for your PATRON prefix'
+
+  red_patron:
+    material: RED_CONCRETE
+    slot: 10
+    display_name: '&c&l[&fPATRON&c&l]'
+    lore:
+    - '&7Preview: &c&l[&fPATRON&c&l] &f%player_name%&7: Hello!'
+    - ''
+    - '&eClick to apply!'
+    left_click_commands:
+    - '[player] pc-internal setprefix &c[&fPATRON&c]'
+    - '[close]'
+
+  green_patron:
+    material: GREEN_CONCRETE
+    slot: 11
+    display_name: '&a&l[&fPATRON&a&l]'
+    lore:
+    - '&7Preview: &a&l[&fPATRON&a&l] &f%player_name%&7: Hello!'
+    - ''
+    - '&eClick to apply!'
+    left_click_commands:
+    - '[player] pc-internal setprefix &a[&fPATRON&a]'
+    - '[close]'
+
+  blue_patron:
+    material: BLUE_CONCRETE
+    slot: 12
+    display_name: '&b&l[&fPATRON&b&l]'
+    lore:
+    - '&7Preview: &b&l[&fPATRON&b&l] &f%player_name%&7: Hello!'
+    - ''
+    - '&eClick to apply!'
+    left_click_commands:
+    - '[player] pc-internal setprefix &b[&fPATRON&b]'
+    - '[close]'
+
+  yellow_patron:
+    material: YELLOW_CONCRETE
+    slot: 13
+    display_name: '&e&l[&fPATRON&e&l]'
+    lore:
+    - '&7Preview: &e&l[&fPATRON&e&l] &f%player_name%&7: Hello!'
+    - ''
+    - '&eClick to apply!'
+    left_click_commands:
+    - '[player] pc-internal setprefix &e[&fPATRON&e]'
+    - '[close]'
+
+  pink_patron:
+    material: PINK_CONCRETE
+    slot: 14
+    display_name: '&d&l[&fPATRON&d&l]'
+    lore:
+    - '&7Preview: &d&l[&fPATRON&d&l] &f%player_name%&7: Hello!'
+    - ''
+    - '&eClick to apply!'
+    left_click_commands:
+    - '[player] pc-internal setprefix &d[&fPATRON&d]'
+    - '[close]'
+
+  white_patron:
+    material: WHITE_CONCRETE
+    slot: 15
+    display_name: '&f&l[PATRON]'
+    lore:
+    - '&7Preview: &f&l[PATRON] &f%player_name%&7: Hello!'
+    - ''
+    - '&eClick to apply!'
+    left_click_commands:
+    - '[player] pc-internal setprefix &f[PATRON]'
+    - '[close]'
+
+  # Gradient Prefixes Section
+  gradient_title:
+    material: FIREWORK_STAR
+    slot: 31
+    display_name: '&d&lGradient Prefixes'
+    lore:
+    - '&7Available for Patron rank and above'
+
+  fire_gradient_prefix:
+    material: BLAZE_POWDER
+    slot: 37
+    display_name: '&c&lFire [PATRON]'
+    lore:
+    - '&7Gradient: &cRed &7→ &eYellow'
+    - '&7Preview: &c[&6P&eA&6T&cR&eO&6N] &f%player_name%&7: Hello!'
+    - ''
+    - '&eClick to apply!'
+    left_click_commands:
+    - '[player] pc-internal setprefix <gradient:#ff0000:#ffff00>[PATRON]</gradient>'
+    - '[close]'
+
+  ocean_gradient_prefix:
+    material: PRISMARINE_CRYSTALS
+    slot: 38
+    display_name: '&9&lOcean [PATRON]'
+    lore:
+    - '&7Gradient: &9Blue &7→ &bCyan'
+    - '&7Preview: &9[&bP&9A&bT&9R&bO&9N] &f%player_name%&7: Hello!'
+    - ''
+    - '&eClick to apply!'
+    left_click_commands:
+    - '[player] pc-internal setprefix <gradient:#0080ff:#00ffff>[PATRON]</gradient>'
+    - '[close]'
+
+  reset_prefix:
+    material: BARRIER
+    slot: 49
+    display_name: '&c&lRemove Prefix'
+    lore:
+    - '&7Remove your current prefix'
+    - ''
+    - '&cClick to remove!'
+    left_click_commands:
+    - '[player] pc-internal reset prefix'
+    - '[close]'
+
+  # Fill empty slots
+  filler:
+    material: GRAY_STAINED_GLASS_PANE
+    slots:
+    - 0-3
+    - 5-9
+    - 16-30
+    - 32-36
+    - 39-48
+    - 50-53
+    display_name: ' '
+    lore: []

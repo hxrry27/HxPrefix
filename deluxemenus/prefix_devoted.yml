@@ -1,0 +1,142 @@
+menu_title: '&d&lPrefix Selection &7(Devoted)'
+menu_size: 54
+open_requirement:
+  requirements:
+    devoted_rank:
+      type: has_permission
+      permission: playercustomisation.prefix
+      deny_commands:
+      - '[message] &cYou don''t have permission to use this!'
+
+items:
+  # Solid Prefixes Section
+  solid_title:
+    material: NAME_TAG
+    slot: 4
+    display_name: '&6&lSolid Color Prefixes'
+    lore:
+    - '&7Choose a solid color for your DEVOTED prefix'
+
+  red_devoted:
+    material: RED_CONCRETE
+    slot: 10
+    display_name: '&c&l[&fDEVOTED&c&l]'
+    lore:
+    - '&7Preview: &c&l[&fDEVOTED&c&l] &f%player_name%&7: Hello!'
+    - ''
+    - '&eClick to apply!'
+    left_click_commands:
+    - '[player] pc-internal setprefix &c[&fDEVOTED&c]'
+    - '[close]'
+
+  green_devoted:
+    material: GREEN_CONCRETE
+    slot: 11
+    display_name: '&a&l[&fDEVOTED&a&l]'
+    lore:
+    - '&7Preview: &a&l[&fDEVOTED&a&l] &f%player_name%&7: Hello!'
+    - ''
+    - '&eClick to apply!'
+    left_click_commands:
+    - '[player] pc-internal setprefix &a[&fDEVOTED&a]'
+    - '[close]'
+
+  blue_devoted:
+    material: BLUE_CONCRETE
+    slot: 12
+    display_name: '&b&l[&fDEVOTED&b&l]'
+    lore:
+    - '&7Preview: &b&l[&fDEVOTED&b&l] &f%player_name%&7: Hello!'
+    - ''
+    - '&eClick to apply!'
+    left_click_commands:
+    - '[player] pc-internal setprefix &b[&fDEVOTED&b]'
+    - '[close]'
+
+  gold_devoted:
+    material: YELLOW_CONCRETE
+    slot: 13
+    display_name: '&6&l[&fDEVOTED&6&l]'
+    lore:
+    - '&7Preview: &6&l[&fDEVOTED&6&l] &f%player_name%&7: Hello!'
+    - ''
+    - '&eClick to apply!'
+    left_click_commands:
+    - '[player] pc-internal setprefix &6[&fDEVOTED&6]'
+    - '[close]'
+
+  # Gradient Prefixes Section
+  gradient_title:
+    material: FIREWORK_STAR
+    slot: 22
+    display_name: '&d&lGradient Prefixes'
+    lore:
+    - '&7Premium gradient options for Devoted'
+
+  galaxy_gradient_prefix:
+    material: ENDER_EYE
+    slot: 28
+    display_name: '&5&lGalaxy [DEVOTED]'
+    lore:
+    - '&7Gradient: &5Purple &7→ &bCyan'
+    - '&7Preview: &5[&bD&5E&bV&5O&bT&5E&bD] &f%player_name%&7: Hello!'
+    - ''
+    - '&eClick to apply!'
+    left_click_commands:
+    - '[player] pc-internal setprefix <gradient:#ff00ff:#00ffff>[DEVOTED]</gradient>'
+    - '[close]'
+
+  rainbow_prefix:
+    material: NETHER_STAR
+    slot: 29
+    display_name: '&c&lR&6a&ei&an&bb&9o&dw &f[DEVOTED]'
+    lore:
+    - '&7Special rainbow gradient!'
+    - '&7Preview: &c[&6D&eE&aV&bO&9T&dE&5D] &f%player_name%&7: Hello!'
+    - ''
+    - '&eClick to apply!'
+    left_click_commands:
+    - '[player] pc-internal setprefix <rainbow>[DEVOTED]</rainbow>'
+    - '[close]'
+
+  custom_tag_info:
+    material: WRITABLE_BOOK
+    slot: 31
+    display_name: '&e&lCustom Tags'
+    lore:
+    - '&7Want a custom prefix like &b[LEGEND]&7?'
+    - '&7Use &f/requesttag <name> &7to request one!'
+    - ''
+    - '&7Staff will review your request.'
+    - ''
+    - '&cClick to learn more!'
+    left_click_commands:
+    - '[message] &7Use &f/requesttag <name> &7to request a custom prefix!'
+    - '[message] &7Example: &f/requesttag LEGEND'
+    - '[message] &7Staff will review and approve/deny your request.'
+
+  reset_prefix:
+    material: BARRIER
+    slot: 49
+    display_name: '&c&lRemove Prefix'
+    lore:
+    - '&7Remove your current prefix'
+    - ''
+    - '&cClick to remove!'
+    left_click_commands:
+    - '[player] pc-internal reset prefix'
+    - '[close]'
+
+  # Fill empty slots
+  filler:
+    material: GRAY_STAINED_GLASS_PANE
+    slots:
+    - 0-3
+    - 5-9
+    - 14-21
+    - 23-27
+    - 30
+    - 32-48
+    - 50-53
+    display_name: ' '
+    lore: []
