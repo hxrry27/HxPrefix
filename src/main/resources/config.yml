@@ -30,14 +30,17 @@ prefixes:
     gradients: []
     custom_allowed: false
   supporter:
-    base_text: "[Supporter]"
-    colors: ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan", "white"]
+    base_text: "[SUPPORTER]"
+    colors: ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan", "white", "gray", "black"]
+    gradients: []
+    custom_allowed: false
   patron:
-    base_text: "[Patron]"
-    colors: ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan", "white"]
-    gradients: ["red:blue", "purple:pink", "gold:orange", "cyan:white"]
+    base_text: "[PATRON]"
+    colors: ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan", "white", "gray", "black"]
+    gradients: ["red:blue", "green:yellow", "purple:pink", "gold:orange", "cyan:white", "lime:green"]
+    custom_allowed: false
   devoted:
-    base_text: "[Devoted]"
+    base_text: "[DEVOTED]"
     colors: ["all"]
     gradients: ["all"]
     custom_allowed: true

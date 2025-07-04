@@ -23,8 +23,11 @@ public class GUIManager {
     }
     
     public void openMainCustomizationGUI(Player player) {
-        // Always remove any existing GUI first to prevent tracking issues
-        openGUIs.remove(player.getUniqueId());
+        // Always remove any existing GUI first to prevent tracking issues  
+        CustomizationGUI existingGUI = openGUIs.remove(player.getUniqueId());
+        if (existingGUI != null) {
+            existingGUI.setTemporaryClose(false); // Reset flag
+        }
         
         PlayerData playerData = plugin.getPlayerDataManager().getPlayerData(player.getUniqueId());
         if (playerData == null) {
@@ -50,7 +53,10 @@ public class GUIManager {
     
     public void openColorSelectionGUI(Player player) {
         // Always remove any existing GUI first to prevent tracking issues
-        openGUIs.remove(player.getUniqueId());
+        CustomizationGUI existingGUI = openGUIs.remove(player.getUniqueId());
+        if (existingGUI != null) {
+            existingGUI.setTemporaryClose(false); // Reset flag
+        }
         
         PlayerData playerData = plugin.getPlayerDataManager().getPlayerData(player.getUniqueId());
         if (playerData == null) {
@@ -76,7 +82,10 @@ public class GUIManager {
     
     public void openPrefixSelectionGUI(Player player) {
         // Always remove any existing GUI first to prevent tracking issues
-        openGUIs.remove(player.getUniqueId());
+        CustomizationGUI existingGUI = openGUIs.remove(player.getUniqueId());
+        if (existingGUI != null) {
+            existingGUI.setTemporaryClose(false); // Reset flag
+        }
         
         PlayerData playerData = plugin.getPlayerDataManager().getPlayerData(player.getUniqueId());
         if (playerData == null) {
@@ -91,7 +100,10 @@ public class GUIManager {
     
     public void openGradientBuilderGUI(Player player) {
         // Always remove any existing GUI first to prevent tracking issues
-        openGUIs.remove(player.getUniqueId());
+        CustomizationGUI existingGUI = openGUIs.remove(player.getUniqueId());
+        if (existingGUI != null) {
+            existingGUI.setTemporaryClose(false); // Reset flag
+        }
         
         PlayerData playerData = plugin.getPlayerDataManager().getPlayerData(player.getUniqueId());
         if (playerData == null) {
@@ -111,7 +123,10 @@ public class GUIManager {
     
     public void openAdminGUI(Player player) {
         // Always remove any existing GUI first to prevent tracking issues
-        openGUIs.remove(player.getUniqueId());
+        CustomizationGUI existingGUI = openGUIs.remove(player.getUniqueId());
+        if (existingGUI != null) {
+            existingGUI.setTemporaryClose(false); // Reset flag
+        }
         
         if (!player.hasPermission("customization.admin")) {
             player.sendMessage("§cYou don't have permission to access the admin GUI!");
@@ -132,11 +147,13 @@ public class GUIManager {
         UUID playerUUID = player.getUniqueId();
         
         // Check if this is one of our GUI inventories by title pattern
-        if (event.getView().getTitle().contains("Customization") || 
-            event.getView().getTitle().contains("Color Selection") ||
-            event.getView().getTitle().contains("Prefix Selection") ||
-            event.getView().getTitle().contains("Gradient Builder") ||
-            event.getView().getTitle().contains("Admin")) {
+        String title = event.getView().getTitle();
+        if (title.contains("Customization") || 
+            title.contains("Color Selection") ||
+            title.contains("Prefix Selection") ||
+            title.contains("Gradient Builder") ||
+            title.contains("Admin") ||
+            title.contains("Hub")) {
             // ALWAYS cancel clicks on our GUIs to prevent item theft
             event.setCancelled(true);
         }
