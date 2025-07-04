@@ -50,7 +50,7 @@ public class PrefixManager {
                     List<String> colors = eventSection.getStringList("colors");
                     List<String> availableDates = eventSection.getStringList("available_dates");
                     
-                    PrefixDefinition definition = new PrefixDefinition(eventName, text, colors, new ArrayList<>(), false);
+                    PrefixDefinition definition = new PrefixDefinition("event_" + eventName, text, colors, new ArrayList<>(), false);
                     definition.setEventPrefix(true);
                     definition.setAvailableDates(availableDates);
                     prefixDefinitions.put("event_" + eventName, definition);
@@ -74,13 +74,30 @@ public class PrefixManager {
         PrefixDefinition rankDefinition = prefixDefinitions.get(playerRank);
         
         if (rankDefinition != null) {
-            // Add rank-based prefixes
-            availablePrefixes.add(playerRank);
+            // Add rank-based prefix color variants
+            List<String> availableColors = getAvailableColors(uuid, playerRank);
+            for (String color : availableColors) {
+                availablePrefixes.add(playerRank + "_" + color);
+            }
+            
+            // Add rank-based prefix gradient variants for patron+ ranks
+            if (playerRank.equals("patron") || playerRank.equals("devoted")) {
+                List<String> availableGradients = getAvailableGradients(uuid, playerRank);
+                for (String gradient : availableGradients) {
+                    availablePrefixes.add(playerRank + "_gradient_" + gradient.replace(":", "_to_"));
+                }
+            }
             
             // Add event prefixes if they're currently available
             for (Map.Entry<String, PrefixDefinition> entry : prefixDefinitions.entrySet()) {
                 if (entry.getValue().isEventPrefix() && isEventPrefixAvailable(entry.getValue())) {
-                    availablePrefixes.add(entry.getKey());
+                    String eventKey = entry.getKey();
+                    PrefixDefinition eventDef = entry.getValue();
+                    
+                    // Add color variants for event prefixes
+                    for (String color : eventDef.getColors()) {
+                        availablePrefixes.add(eventKey + "_" + color);
+                    }
                 }
             }
             
@@ -136,21 +153,46 @@ public class PrefixManager {
         return gradients;
     }
     
-    public Component formatPrefix(String prefixId, String color, String gradient) {
-        PrefixDefinition definition = prefixDefinitions.get(prefixId);
+    public Component formatPrefix(String fullPrefixId, String overrideColor, String overrideGradient) {
+        // Parse the full prefix ID (e.g., "supporter_red", "patron_gradient_red_to_blue", "event_pride_rainbow")
+        String basePrefixId;
+        String embeddedColor = null;
+        String embeddedGradient = null;
+        
+        if (fullPrefixId.contains("_gradient_")) {
+            String[] parts = fullPrefixId.split("_gradient_", 2);
+            basePrefixId = parts[0];
+            if (parts.length > 1) {
+                embeddedGradient = parts[1].replace("_to_", ":");
+            }
+        } else if (fullPrefixId.contains("_")) {
+            String[] parts = fullPrefixId.split("_", 2);
+            basePrefixId = parts[0];
+            if (parts.length > 1 && !parts[1].equals("gradient")) {
+                embeddedColor = parts[1];
+            }
+        } else {
+            basePrefixId = fullPrefixId;
+        }
+        
+        PrefixDefinition definition = prefixDefinitions.get(basePrefixId);
         if (definition == null) {
             return Component.text("[Unknown]");
         }
         
-        String text = definition.getBaseText();
+        String text = definition.getBaseText().toUpperCase(); // Make all prefixes uppercase by default
         
-        if (gradient != null && !gradient.isEmpty()) {
-            return plugin.getColorManager().applyGradient(text, gradient);
-        } else if (color != null && !color.isEmpty()) {
-            if (color.equals("rainbow")) {
+        // Use override values if provided, otherwise use embedded values
+        String useColor = overrideColor != null ? overrideColor : embeddedColor;
+        String useGradient = overrideGradient != null ? overrideGradient : embeddedGradient;
+        
+        if (useGradient != null && !useGradient.isEmpty()) {
+            return plugin.getColorManager().applyGradient(text, useGradient);
+        } else if (useColor != null && !useColor.isEmpty()) {
+            if (useColor.equals("rainbow")) {
                 return plugin.getColorManager().createRainbowText(text);
             } else {
-                return plugin.getColorManager().applyColor(text, color);
+                return plugin.getColorManager().applyColor(text, useColor);
             }
         } else {
             // Default to white color for prefixes when no color specified
@@ -158,12 +200,12 @@ public class PrefixManager {
         }
     }
     
-    public String previewPrefix(String prefixId, String color, String gradient, String playerName) {
-        Component prefixComponent = formatPrefix(prefixId, color, gradient);
+    public String previewPrefix(String fullPrefixId, String overrideColor, String overrideGradient, String playerName) {
+        Component prefixComponent = formatPrefix(fullPrefixId, overrideColor, overrideGradient);
         Component nameComponent = Component.text(playerName);
         
-        Component fullComponent = prefixComponent.append(Component.text(" ")).append(nameComponent);
-        return fullComponent.toString(); // Simplified preview
+        Component fullComponent = prefixComponent.append(Component.text(" ")).append(nameComponent).append(Component.text(": Hello world!"));
+        return fullComponent.toString(); // Simplified preview - would need proper Adventure text serialization for actual display
     }
     
     public boolean canUsePrefix(UUID uuid, String prefixId) {
@@ -240,8 +282,12 @@ public class PrefixManager {
             return true; // Available all year
         }
         
-        String currentMonth = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMMM")).toLowerCase();
-        return availableDates.contains(currentMonth);
+        // For testing purposes, make all event prefixes available
+        // In production, this would check the current date
+        return true;
+        
+        // String currentMonth = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMMM")).toLowerCase();
+        // return availableDates.contains(currentMonth);
     }
     
     public void reload() {

@@ -27,16 +27,35 @@ public class DatabaseManager {
     
     public boolean initialize() {
         try {
-            String databasePath = plugin.getConfig().getString("database.file", "customization.db");
+            String dbType = plugin.getConfig().getString("database.type", "sqlite");
             
-            // Make sure the database directory exists
-            File dbFile = new File(plugin.getDataFolder(), databasePath);
-            if (!dbFile.getParentFile().exists()) {
-                dbFile.getParentFile().mkdirs();
+            if (dbType.equalsIgnoreCase("mysql")) {
+                // MySQL connection
+                String host = plugin.getConfig().getString("database.host", "localhost");
+                int port = plugin.getConfig().getInt("database.port", 3306);
+                String database = plugin.getConfig().getString("database.database", "player_customization");
+                String username = plugin.getConfig().getString("database.username", "minecraft");
+                String password = plugin.getConfig().getString("database.password", "");
+                
+                String url = String.format("jdbc:mysql://%s:%d/%s?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true", 
+                    host, port, database);
+                    
+                connection = DriverManager.getConnection(url, username, password);
+                plugin.getLogger().info("Connected to MySQL database: " + database);
+                
+            } else {
+                // SQLite connection (default)
+                String databasePath = plugin.getConfig().getString("database.file", "customization.db");
+                
+                // Make sure the database directory exists
+                File dbFile = new File(plugin.getDataFolder(), databasePath);
+                if (!dbFile.getParentFile().exists()) {
+                    dbFile.getParentFile().mkdirs();
+                }
+                
+                connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile.getAbsolutePath());
+                plugin.getLogger().info("Connected to SQLite database: " + dbFile.getAbsolutePath());
             }
-            
-            // Set up the SQLite connection
-            connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile.getAbsolutePath());
             
             // Set up our tables
             createTables();
@@ -57,8 +76,11 @@ public class DatabaseManager {
     }
     
     private void createTables() throws SQLException {
-        // Players table
-        String createPlayersTable = """
+        String dbType = plugin.getConfig().getString("database.type", "sqlite");
+        boolean isMySQL = dbType.equalsIgnoreCase("mysql");
+        
+        // Players table (MySQL and SQLite compatible)
+        String createPlayersTable = String.format("""
             CREATE TABLE IF NOT EXISTS players (
                 uuid VARCHAR(36) PRIMARY KEY,
                 username VARCHAR(16) NOT NULL,
@@ -67,28 +89,33 @@ public class DatabaseManager {
                 current_prefix_id VARCHAR(50),
                 current_nickname VARCHAR(32),
                 rank VARCHAR(20) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                created_at %s,
+                updated_at %s
             )
-        """;
+        """, 
+        isMySQL ? "TIMESTAMP DEFAULT CURRENT_TIMESTAMP" : "TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+        isMySQL ? "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" : "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        );
         
         // Available_Prefixes table
-        String createAvailablePrefixesTable = """
+        String createAvailablePrefixesTable = String.format("""
             CREATE TABLE IF NOT EXISTS available_prefixes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id %s,
                 player_uuid VARCHAR(36),
                 prefix_id VARCHAR(50),
                 prefix_type VARCHAR(20),
                 earned_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                expires_at TIMESTAMP NULL,
-                FOREIGN KEY (player_uuid) REFERENCES players(uuid)
+                expires_at TIMESTAMP NULL%s
             )
-        """;
+        """, 
+        isMySQL ? "INT AUTO_INCREMENT PRIMARY KEY" : "INTEGER PRIMARY KEY AUTOINCREMENT",
+        isMySQL ? ",\n                FOREIGN KEY (player_uuid) REFERENCES players(uuid)" : ""
+        );
         
         // Custom_Prefix_Requests table
-        String createCustomPrefixRequestsTable = """
+        String createCustomPrefixRequestsTable = String.format("""
             CREATE TABLE IF NOT EXISTS custom_prefix_requests (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id %s,
                 player_uuid VARCHAR(36),
                 requested_text VARCHAR(32),
                 status VARCHAR(20) DEFAULT 'pending',
@@ -96,10 +123,12 @@ public class DatabaseManager {
                 reviewed_by VARCHAR(36) NULL,
                 reviewed_at TIMESTAMP NULL,
                 review_reason TEXT NULL,
-                expires_at TIMESTAMP NULL,
-                FOREIGN KEY (player_uuid) REFERENCES players(uuid)
+                expires_at TIMESTAMP NULL%s
             )
-        """;
+        """, 
+        isMySQL ? "INT AUTO_INCREMENT PRIMARY KEY" : "INTEGER PRIMARY KEY AUTOINCREMENT",
+        isMySQL ? ",\n                FOREIGN KEY (player_uuid) REFERENCES players(uuid)" : ""
+        );
         
         // Prefix_Definitions table
         String createPrefixDefinitionsTable = """
@@ -115,16 +144,18 @@ public class DatabaseManager {
         """;
         
         // Usage_Analytics table
-        String createUsageAnalyticsTable = """
+        String createUsageAnalyticsTable = String.format("""
             CREATE TABLE IF NOT EXISTS usage_analytics (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id %s,
                 player_uuid VARCHAR(36),
                 action_type VARCHAR(20),
                 old_value VARCHAR(100),
                 new_value VARCHAR(100),
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        """;
+        """, 
+        isMySQL ? "INT AUTO_INCREMENT PRIMARY KEY" : "INTEGER PRIMARY KEY AUTOINCREMENT"
+        );
         
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(createPlayersTable);

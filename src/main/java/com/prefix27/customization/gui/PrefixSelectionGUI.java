@@ -50,27 +50,25 @@ public class PrefixSelectionGUI extends CustomizationGUI {
         player.openInventory(inventory);
     }
     
-    private void addPrefixOption(String prefixId, int slot) {
+    private void addPrefixOption(String fullPrefixId, int slot) {
         ItemStack item = new ItemStack(Material.NAME_TAG, 1);
         ItemMeta meta = item.getItemMeta();
         
-        // Get prefix colors for this player's rank
-        List<String> availableColors = plugin.getPrefixManager().getAvailableColors(player.getUniqueId(), prefixId);
-        
-        String displayName = "§a§l" + prefixId;
-        if (prefixId.equals(playerData.getCurrentPrefixId())) {
-            displayName = "§2§l" + prefixId + " §7(Current)";
+        // Parse the display name from the prefix ID
+        String displayName = getPrefixDisplayName(fullPrefixId);
+        if (fullPrefixId.equals(playerData.getCurrentPrefixId())) {
+            displayName = "§2§l" + displayName + " §7(Current)";
+        } else {
+            displayName = "§a§l" + displayName;
         }
         
         meta.setDisplayName(displayName);
         
-        // Create lore with color options
+        // Create lore with preview
         List<String> lore = Arrays.asList(
-            "§7Available colors: §f" + String.join(", ", availableColors),
+            "§7Type: " + getPrefixTypeDescription(fullPrefixId),
             "",
-            "§7Preview: " + plugin.getPrefixManager().previewPrefix(prefixId, 
-                availableColors.isEmpty() ? null : availableColors.get(0), 
-                null, playerData.getDisplayName()),
+            "§7Preview: " + plugin.getPrefixManager().previewPrefix(fullPrefixId, null, null, playerData.getDisplayName()),
             "",
             "§eClick to select this prefix!"
         );
@@ -78,6 +76,34 @@ public class PrefixSelectionGUI extends CustomizationGUI {
         meta.setLore(lore);
         item.setItemMeta(meta);
         inventory.setItem(slot, item);
+    }
+    
+    private String getPrefixDisplayName(String fullPrefixId) {
+        if (fullPrefixId.contains("_gradient_")) {
+            String[] parts = fullPrefixId.split("_gradient_", 2);
+            String base = parts[0].toUpperCase();
+            String gradient = parts.length > 1 ? parts[1].replace("_to_", " → ") : "";
+            return base + " (Gradient: " + gradient + ")";
+        } else if (fullPrefixId.contains("_")) {
+            String[] parts = fullPrefixId.split("_", 2);
+            String base = parts[0].toUpperCase();
+            String color = parts.length > 1 ? parts[1].toUpperCase() : "";
+            return base + " (" + color + ")";
+        } else {
+            return fullPrefixId.toUpperCase();
+        }
+    }
+    
+    private String getPrefixTypeDescription(String fullPrefixId) {
+        if (fullPrefixId.startsWith("event_")) {
+            return "Event Prefix";
+        } else if (fullPrefixId.contains("_gradient_")) {
+            return "Rank Prefix with Gradient";
+        } else if (fullPrefixId.contains("_")) {
+            return "Rank Prefix with Color";
+        } else {
+            return "Basic Prefix";
+        }
     }
     
     private void addCustomPrefixOption() {

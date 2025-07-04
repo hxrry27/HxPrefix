@@ -233,15 +233,22 @@ public class PlayerDataManager {
     private void assignDefaultPrefix(PlayerData data) {
         String rank = data.getRank();
         
-        // Player rank gets no prefix, other ranks get their rank as prefix
+        // Player rank gets no prefix, other ranks get their rank as prefix with default color
         switch (rank.toLowerCase()) {
             case "player":
                 data.setCurrentPrefixId(null); // No prefix for player rank
                 break;
             case "supporter":
+                // Default to white supporter prefix
+                data.setCurrentPrefixId("supporter_white");
+                break;
             case "patron":
+                // Default to white patron prefix  
+                data.setCurrentPrefixId("patron_white");
+                break;
             case "devoted":
-                data.setCurrentPrefixId(rank.toLowerCase()); // Set rank as prefix
+                // Default to white devoted prefix
+                data.setCurrentPrefixId("devoted_white");
                 break;
             default:
                 data.setCurrentPrefixId(null); // Default to no prefix

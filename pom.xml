@@ -78,6 +78,14 @@
             <scope>compile</scope>
         </dependency>
         
+        <!-- MySQL JDBC -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.33</version>
+            <scope>compile</scope>
+        </dependency>
+        
         <!-- Adventure API (for colors) -->
         <dependency>
             <groupId>net.kyori</groupId>
@@ -130,6 +138,10 @@
                                 <relocation>
                                     <pattern>org.sqlite</pattern>
                                     <shadedPattern>com.prefix27.customization.lib.sqlite</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.mysql</pattern>
+                                    <shadedPattern>com.prefix27.customization.lib.mysql</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
