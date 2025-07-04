@@ -20,49 +20,49 @@ items:
   red_devoted:
     material: RED_CONCRETE
     slot: 10
-    display_name: '&c&l[&fDEVOTED&c&l]'
+    display_name: '&c&l[DEVOTED]'
     lore:
-    - '&7Preview: &c&l[&fDEVOTED&c&l] &f%player_name%&7: Hello!'
+    - '&7Preview: &c&l[DEVOTED] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix &c[&fDEVOTED&c]'
+    - '[player] pc-internal setprefix &c&l[DEVOTED]'
     - '[close]'
 
   green_devoted:
     material: GREEN_CONCRETE
     slot: 11
-    display_name: '&a&l[&fDEVOTED&a&l]'
+    display_name: '&a&l[DEVOTED]'
     lore:
-    - '&7Preview: &a&l[&fDEVOTED&a&l] &f%player_name%&7: Hello!'
+    - '&7Preview: &a&l[DEVOTED] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix &a[&fDEVOTED&a]'
+    - '[player] pc-internal setprefix &a&l[DEVOTED]'
     - '[close]'
 
   blue_devoted:
     material: BLUE_CONCRETE
     slot: 12
-    display_name: '&b&l[&fDEVOTED&b&l]'
+    display_name: '&b&l[DEVOTED]'
     lore:
-    - '&7Preview: &b&l[&fDEVOTED&b&l] &f%player_name%&7: Hello!'
+    - '&7Preview: &b&l[DEVOTED] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix &b[&fDEVOTED&b]'
+    - '[player] pc-internal setprefix &b&l[DEVOTED]'
     - '[close]'
 
   gold_devoted:
     material: YELLOW_CONCRETE
     slot: 13
-    display_name: '&6&l[&fDEVOTED&6&l]'
+    display_name: '&6&l[DEVOTED]'
     lore:
-    - '&7Preview: &6&l[&fDEVOTED&6&l] &f%player_name%&7: Hello!'
+    - '&7Preview: &6&l[DEVOTED] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix &6[&fDEVOTED&6]'
+    - '[player] pc-internal setprefix &6&l[DEVOTED]'
     - '[close]'
 
   # Gradient Prefixes Section
@@ -76,27 +76,27 @@ items:
   galaxy_gradient_prefix:
     material: ENDER_EYE
     slot: 28
-    display_name: '&5&lGalaxy [DEVOTED]'
+    display_name: '&5&lGalaxy Gradient [DEVOTED]'
     lore:
     - '&7Gradient: &5Purple &7→ &bCyan'
-    - '&7Preview: &5[&bD&5E&bV&5O&bT&5E&bD] &f%player_name%&7: Hello!'
+    - '&7Preview: &5&l[&b&lD&5&lE&b&lV&5&lO&b&lT&5&lE&b&lD&5&l] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix <gradient:#ff00ff:#00ffff>[DEVOTED]</gradient>'
+    - '[player] pc-internal setprefix <gradient:#ff00ff:#00ffff><bold>[DEVOTED]</bold></gradient>'
     - '[close]'
 
   rainbow_prefix:
     material: NETHER_STAR
     slot: 29
-    display_name: '&c&lR&6a&ei&an&bb&9o&dw &f[DEVOTED]'
+    display_name: '&c&lR&6&la&e&li&a&ln&b&lb&9&lo&d&lw &f&l[DEVOTED]'
     lore:
     - '&7Special rainbow gradient!'
-    - '&7Preview: &c[&6D&eE&aV&bO&9T&dE&5D] &f%player_name%&7: Hello!'
+    - '&7Preview: &c&l[&6&lD&e&lE&a&lV&b&lO&9&lT&d&lE&5&lD&c&l] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix <rainbow>[DEVOTED]</rainbow>'
+    - '[player] pc-internal setprefix <rainbow><bold>[DEVOTED]</bold></rainbow>'
     - '[close]'
 
   custom_tag_info:

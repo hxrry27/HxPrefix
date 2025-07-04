@@ -20,61 +20,61 @@ items:
   red_patron:
     material: RED_CONCRETE
     slot: 10
-    display_name: '&c&l[&fPATRON&c&l]'
+    display_name: '&c&l[PATRON]'
     lore:
-    - '&7Preview: &c&l[&fPATRON&c&l] &f%player_name%&7: Hello!'
+    - '&7Preview: &c&l[PATRON] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix &c[&fPATRON&c]'
+    - '[player] pc-internal setprefix &c&l[PATRON]'
     - '[close]'
 
   green_patron:
     material: GREEN_CONCRETE
     slot: 11
-    display_name: '&a&l[&fPATRON&a&l]'
+    display_name: '&a&l[PATRON]'
     lore:
-    - '&7Preview: &a&l[&fPATRON&a&l] &f%player_name%&7: Hello!'
+    - '&7Preview: &a&l[PATRON] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix &a[&fPATRON&a]'
+    - '[player] pc-internal setprefix &a&l[PATRON]'
     - '[close]'
 
   blue_patron:
     material: BLUE_CONCRETE
     slot: 12
-    display_name: '&b&l[&fPATRON&b&l]'
+    display_name: '&b&l[PATRON]'
     lore:
-    - '&7Preview: &b&l[&fPATRON&b&l] &f%player_name%&7: Hello!'
+    - '&7Preview: &b&l[PATRON] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix &b[&fPATRON&b]'
+    - '[player] pc-internal setprefix &b&l[PATRON]'
     - '[close]'
 
   yellow_patron:
     material: YELLOW_CONCRETE
     slot: 13
-    display_name: '&e&l[&fPATRON&e&l]'
+    display_name: '&e&l[PATRON]'
     lore:
-    - '&7Preview: &e&l[&fPATRON&e&l] &f%player_name%&7: Hello!'
+    - '&7Preview: &e&l[PATRON] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix &e[&fPATRON&e]'
+    - '[player] pc-internal setprefix &e&l[PATRON]'
     - '[close]'
 
   pink_patron:
     material: PINK_CONCRETE
     slot: 14
-    display_name: '&d&l[&fPATRON&d&l]'
+    display_name: '&d&l[PATRON]'
     lore:
-    - '&7Preview: &d&l[&fPATRON&d&l] &f%player_name%&7: Hello!'
+    - '&7Preview: &d&l[PATRON] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix &d[&fPATRON&d]'
+    - '[player] pc-internal setprefix &d&l[PATRON]'
     - '[close]'
 
   white_patron:
@@ -86,7 +86,7 @@ items:
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix &f[PATRON]'
+    - '[player] pc-internal setprefix &f&l[PATRON]'
     - '[close]'
 
   # Gradient Prefixes Section
@@ -100,27 +100,27 @@ items:
   fire_gradient_prefix:
     material: BLAZE_POWDER
     slot: 37
-    display_name: '&c&lFire [PATRON]'
+    display_name: '&c&lFire Gradient [PATRON]'
     lore:
     - '&7Gradient: &cRed &7→ &eYellow'
-    - '&7Preview: &c[&6P&eA&6T&cR&eO&6N] &f%player_name%&7: Hello!'
+    - '&7Preview: &c&l[&6&lP&e&lA&6&lT&c&lR&e&lO&6&lN&c&l] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix <gradient:#ff0000:#ffff00>[PATRON]</gradient>'
+    - '[player] pc-internal setprefix <gradient:#ff0000:#ffff00><bold>[PATRON]</bold></gradient>'
     - '[close]'
 
   ocean_gradient_prefix:
     material: PRISMARINE_CRYSTALS
     slot: 38
-    display_name: '&9&lOcean [PATRON]'
+    display_name: '&9&lOcean Gradient [PATRON]'
     lore:
     - '&7Gradient: &9Blue &7→ &bCyan'
-    - '&7Preview: &9[&bP&9A&bT&9R&bO&9N] &f%player_name%&7: Hello!'
+    - '&7Preview: &9&l[&b&lP&9&lA&b&lT&9&lR&b&lO&9&lN&b&l] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix <gradient:#0080ff:#00ffff>[PATRON]</gradient>'
+    - '[player] pc-internal setprefix <gradient:#0080ff:#00ffff><bold>[PATRON]</bold></gradient>'
     - '[close]'
 
   reset_prefix:

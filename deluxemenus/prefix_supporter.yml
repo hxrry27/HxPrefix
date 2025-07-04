@@ -12,61 +12,61 @@ items:
   red_supporter:
     material: RED_CONCRETE
     slot: 10
-    display_name: '&c&l[&fSUPPORTER&c&l]'
+    display_name: '&c&l[SUPPORTER]'
     lore:
-    - '&7Preview: &c&l[&fSUPPORTER&c&l] &f%player_name%&7: Hello!'
+    - '&7Preview: &c&l[SUPPORTER] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix &c[&fSUPPORTER&c]'
+    - '[player] pc-internal setprefix &c&l[SUPPORTER]'
     - '[close]'
 
   green_supporter:
     material: GREEN_CONCRETE
     slot: 11
-    display_name: '&a&l[&fSUPPORTER&a&l]'
+    display_name: '&a&l[SUPPORTER]'
     lore:
-    - '&7Preview: &a&l[&fSUPPORTER&a&l] &f%player_name%&7: Hello!'
+    - '&7Preview: &a&l[SUPPORTER] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix &a[&fSUPPORTER&a]'
+    - '[player] pc-internal setprefix &a&l[SUPPORTER]'
     - '[close]'
 
   blue_supporter:
     material: BLUE_CONCRETE
     slot: 12
-    display_name: '&b&l[&fSUPPORTER&b&l]'
+    display_name: '&b&l[SUPPORTER]'
     lore:
-    - '&7Preview: &b&l[&fSUPPORTER&b&l] &f%player_name%&7: Hello!'
+    - '&7Preview: &b&l[SUPPORTER] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix &b[&fSUPPORTER&b]'
+    - '[player] pc-internal setprefix &b&l[SUPPORTER]'
     - '[close]'
 
   yellow_supporter:
     material: YELLOW_CONCRETE
     slot: 13
-    display_name: '&e&l[&fSUPPORTER&e&l]'
+    display_name: '&e&l[SUPPORTER]'
     lore:
-    - '&7Preview: &e&l[&fSUPPORTER&e&l] &f%player_name%&7: Hello!'
+    - '&7Preview: &e&l[SUPPORTER] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix &e[&fSUPPORTER&e]'
+    - '[player] pc-internal setprefix &e&l[SUPPORTER]'
     - '[close]'
 
   pink_supporter:
     material: PINK_CONCRETE
     slot: 14
-    display_name: '&d&l[&fSUPPORTER&d&l]'
+    display_name: '&d&l[SUPPORTER]'
     lore:
-    - '&7Preview: &d&l[&fSUPPORTER&d&l] &f%player_name%&7: Hello!'
+    - '&7Preview: &d&l[SUPPORTER] &f%player_name%&7: Hello!'
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix &d[&fSUPPORTER&d]'
+    - '[player] pc-internal setprefix &d&l[SUPPORTER]'
     - '[close]'
 
   white_supporter:
@@ -78,7 +78,7 @@ items:
     - ''
     - '&eClick to apply!'
     left_click_commands:
-    - '[player] pc-internal setprefix &f[SUPPORTER]'
+    - '[player] pc-internal setprefix &f&l[SUPPORTER]'
     - '[close]'
 
   reset_prefix:
