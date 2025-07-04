@@ -18,6 +18,7 @@ public class PlayerCustomizationPlugin extends JavaPlugin {
     private PrefixManager prefixManager;
     private ColorManager colorManager;
     private GUIManager guiManager;
+    private com.prefix27.customization.gui.SimpleGUIManager simpleGUIManager;
     private ChatInputManager chatInputManager;
     
     private LuckPermsIntegration luckPermsIntegration;
@@ -80,6 +81,7 @@ public class PlayerCustomizationPlugin extends JavaPlugin {
             prefixManager = new PrefixManager(this);
             colorManager = new ColorManager(this);
             guiManager = new GUIManager(this);
+            simpleGUIManager = new com.prefix27.customization.gui.SimpleGUIManager(this);
             chatInputManager = new ChatInputManager(this);
             
             return true;
@@ -128,16 +130,13 @@ public class PlayerCustomizationPlugin extends JavaPlugin {
     }
 
     private void registerCommands() {
-        // Wire up all our commands
-        getCommand("customize").setExecutor(new CustomizeCommand(this));
-        getCommand("color").setExecutor(new ColorCommand(this));
-        getCommand("prefix").setExecutor(new PrefixCommand(this));
+        // Simple commands approach
+        getCommand("color").setExecutor(new com.prefix27.customization.commands.SimpleColorCommand(this));
+        getCommand("prefix").setExecutor(new com.prefix27.customization.commands.SimplePrefixCommand(this));
         getCommand("nick").setExecutor(new NickCommand(this));
-        getCommand("gradient").setExecutor(new GradientCommand(this));
         getCommand("customization").setExecutor(new CustomizationAdminCommand(this));
         
         // Add tab completion where it makes sense
-        getCommand("customize").setTabCompleter(new CustomizeCommand(this));
         getCommand("customization").setTabCompleter(new CustomizationAdminCommand(this));
         getCommand("nick").setTabCompleter(new NickCommand(this));
     }
@@ -146,16 +145,15 @@ public class PlayerCustomizationPlugin extends JavaPlugin {
         // Handle player joins/leaves for data loading
         getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
         
-        // Handle GUI interactions
-        getServer().getPluginManager().registerEvents(new GUIListener(this), this);
+        // Handle simple GUI interactions
+        getServer().getPluginManager().registerEvents(simpleGUIManager, this);
         
         // Handle chat input for custom prefix requests
         getServer().getPluginManager().registerEvents(chatInputManager, this);
         
         // Register fallback chat listener for cross-server formatting
-        // This ensures chat formatting works even if VentureChat isn't configured properly
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
-        getLogger().info("Registered fallback chat listener for cross-server formatting");
+        getLogger().info("Registered simple GUI system and chat formatting");
     }
 
     public void reloadPluginConfig() {
@@ -202,6 +200,10 @@ public class PlayerCustomizationPlugin extends JavaPlugin {
 
     public ChatInputManager getChatInputManager() {
         return chatInputManager;
+    }
+
+    public com.prefix27.customization.gui.SimpleGUIManager getSimpleGUIManager() {
+        return simpleGUIManager;
     }
 
     public LuckPermsIntegration getLuckPermsIntegration() {

@@ -10,28 +10,19 @@ depend: [LuckPerms]
 softdepend: [PlaceholderAPI, VentureChat]
 
 commands:
-  customize:
-    description: Open the main customization GUI
-    usage: /<command>
-    aliases: [style]
-    permission: customization.use
   color:
-    description: Direct access to color selection GUI
+    description: Choose your name color
     usage: /<command>
     aliases: [colour]
-    permission: customization.use
+    permission: customization.supporter
   prefix:
-    description: Direct access to prefix selection GUI
-    usage: /<command>
+    description: Choose your prefix. Use '/prefix request' for custom prefixes
+    usage: /<command> [request]
     permission: customization.use
   nick:
     description: Set your nickname
     usage: /<command> <name>
     permission: customization.nick
-  gradient:
-    description: Direct access to gradient builder
-    usage: /<command>
-    permission: customization.patron
   customization:
     description: Admin commands for customization management
     usage: /<command> <admin|reload|reset>
