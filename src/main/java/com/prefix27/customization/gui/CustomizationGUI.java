@@ -19,7 +19,14 @@ public abstract class CustomizationGUI {
     }
     
     public abstract void open();
-    public abstract void handleClick(InventoryClickEvent event);
+    
+    public final void handleClick(InventoryClickEvent event) {
+        // CRITICAL: Always cancel to prevent item theft
+        event.setCancelled(true);
+        onInventoryClick(event);
+    }
+    
+    protected abstract void onInventoryClick(InventoryClickEvent event);
     public abstract void handleClose(InventoryCloseEvent event);
     
     public void close() {

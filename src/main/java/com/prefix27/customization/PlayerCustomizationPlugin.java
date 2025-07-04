@@ -115,8 +115,12 @@ public class PlayerCustomizationPlugin extends JavaPlugin {
         if (getServer().getPluginManager().getPlugin("VentureChat") != null) {
             ventureChatIntegration = new VentureChatIntegration(this);
             if (ventureChatIntegration.initialize()) {
-                getLogger().info("VentureChat integration enabled!");
+                getLogger().info("VentureChat integration enabled! Use placeholders: %customization_name%, %customization_prefix%, %customization_full%");
             }
+        } else {
+            // Use our own chat handler when VentureChat is not available
+            getServer().getPluginManager().registerEvents(new ChatListener(this), this);
+            getLogger().info("Using built-in chat formatting (VentureChat not found)");
         }
     }
 

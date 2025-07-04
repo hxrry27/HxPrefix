@@ -25,7 +25,18 @@ public class GUIManager {
     public void openMainCustomizationGUI(Player player) {
         PlayerData playerData = plugin.getPlayerDataManager().getPlayerData(player.getUniqueId());
         if (playerData == null) {
-            player.sendMessage("§cError loading your customization data. Please try again.");
+            player.sendMessage("§cLoading your customization data, please wait...");
+            // Try again after a short delay
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                PlayerData delayedData = plugin.getPlayerDataManager().getPlayerData(player.getUniqueId());
+                if (delayedData == null) {
+                    player.sendMessage("§cError loading your customization data. Please try again.");
+                } else {
+                    MainCustomizationGUI gui = new MainCustomizationGUI(plugin, player, delayedData);
+                    openGUIs.put(player.getUniqueId(), gui);
+                    gui.open();
+                }
+            }, 20L); // Wait 1 second
             return;
         }
         
@@ -37,7 +48,18 @@ public class GUIManager {
     public void openColorSelectionGUI(Player player) {
         PlayerData playerData = plugin.getPlayerDataManager().getPlayerData(player.getUniqueId());
         if (playerData == null) {
-            player.sendMessage("§cError loading your customization data. Please try again.");
+            player.sendMessage("§cLoading your customization data, please wait...");
+            // Try again after a short delay
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                PlayerData delayedData = plugin.getPlayerDataManager().getPlayerData(player.getUniqueId());
+                if (delayedData == null) {
+                    player.sendMessage("§cError loading your customization data. Please try again.");
+                } else {
+                    ColorSelectionGUI gui = new ColorSelectionGUI(plugin, player, delayedData);
+                    openGUIs.put(player.getUniqueId(), gui);
+                    gui.open();
+                }
+            }, 20L); // Wait 1 second
             return;
         }
         
@@ -93,6 +115,16 @@ public class GUIManager {
         
         Player player = (Player) event.getWhoClicked();
         UUID playerUUID = player.getUniqueId();
+        
+        // Check if this is one of our GUI inventories by title pattern
+        if (event.getView().getTitle().contains("Customization") || 
+            event.getView().getTitle().contains("Color Selection") ||
+            event.getView().getTitle().contains("Prefix Selection") ||
+            event.getView().getTitle().contains("Gradient Builder") ||
+            event.getView().getTitle().contains("Admin")) {
+            // ALWAYS cancel clicks on our GUIs to prevent item theft
+            event.setCancelled(true);
+        }
         
         CustomizationGUI gui = openGUIs.get(playerUUID);
         if (gui != null) {

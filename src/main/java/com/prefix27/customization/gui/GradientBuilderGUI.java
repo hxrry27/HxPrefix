@@ -160,8 +160,8 @@ public class GradientBuilderGUI extends CustomizationGUI {
     }
     
     @Override
-    public void handleClick(InventoryClickEvent event) {
-        event.setCancelled(true);
+    protected void onInventoryClick(InventoryClickEvent event) {
+        // Event is already cancelled in base class
         
         if (event.getClickedInventory() != inventory) {
             return;

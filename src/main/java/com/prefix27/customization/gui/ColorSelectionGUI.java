@@ -186,9 +186,10 @@ public class ColorSelectionGUI extends CustomizationGUI {
     }
     
     @Override
-    public void handleClick(InventoryClickEvent event) {
-        event.setCancelled(true);
+    protected void onInventoryClick(InventoryClickEvent event) {
+        // Event is already cancelled in base class
         
+        // Only process clicks in our GUI inventory
         if (event.getClickedInventory() != inventory) {
             return;
         }

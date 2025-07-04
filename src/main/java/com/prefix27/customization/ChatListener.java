@@ -1,29 +1,40 @@
-package com.prefix27.customization.integrations;
+package com.prefix27.customization;
 
-import com.prefix27.customization.PlayerCustomizationPlugin;
 import com.prefix27.customization.database.PlayerData;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 
-public class VentureChatIntegration {
+public class ChatListener implements Listener {
     
     private final PlayerCustomizationPlugin plugin;
     
-    public VentureChatIntegration(PlayerCustomizationPlugin plugin) {
+    public ChatListener(PlayerCustomizationPlugin plugin) {
         this.plugin = plugin;
     }
     
-    public boolean initialize() {
-        try {
-            // VentureChat integration works through PlaceholderAPI placeholders
-            // No event listener needed - VentureChat will call our PlaceholderAPI expansion
-            plugin.getLogger().info("VentureChat integration initialized successfully!");
-            return true;
-        } catch (Exception e) {
-            plugin.getLogger().warning("VentureChat integration failed: " + e.getMessage());
-            return false;
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onPlayerChat(AsyncPlayerChatEvent event) {
+        Player player = event.getPlayer();
+        PlayerData playerData = plugin.getPlayerDataManager().getPlayerData(player.getUniqueId());
+        
+        if (playerData == null) {
+            return;
         }
+        
+        // Format the player's display name for chat
+        String formattedName = getFormattedPlayerName(playerData);
+        
+        // Update the event's format to include our custom formatting
+        String originalFormat = event.getFormat();
+        
+        // Replace the player name placeholder with our formatted name
+        String newFormat = originalFormat.replace("%1$s", formattedName);
+        event.setFormat(newFormat);
     }
     
     private String getFormattedPlayerName(PlayerData playerData) {
@@ -63,29 +74,5 @@ public class VentureChatIntegration {
         builder.append(nameComponent);
         
         return builder.build();
-    }
-    
-    public String formatPlayerNameForVentureChat(Player player) {
-        PlayerData playerData = plugin.getPlayerDataManager().getPlayerData(player.getUniqueId());
-        if (playerData == null) {
-            return player.getName();
-        }
-        
-        return getFormattedPlayerName(playerData);
-    }
-    
-    public String formatPlayerPrefixForVentureChat(Player player) {
-        PlayerData playerData = plugin.getPlayerDataManager().getPlayerData(player.getUniqueId());
-        if (playerData == null || !playerData.hasPrefix()) {
-            return "";
-        }
-        
-        Component prefixComponent = plugin.getPrefixManager().formatPrefix(
-            playerData.getCurrentPrefixId(),
-            null,
-            null
-        );
-        
-        return LegacyComponentSerializer.legacySection().serialize(prefixComponent);
     }
 }
