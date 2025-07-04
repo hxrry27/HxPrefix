@@ -93,7 +93,7 @@ public class DatabaseManager {
                 current_name_gradient VARCHAR(100),
                 current_prefix_id VARCHAR(50),
                 current_nickname VARCHAR(32),
-                rank VARCHAR(20) NOT NULL,
+                `rank` VARCHAR(20) NOT NULL,
                 created_at %s,
                 updated_at %s
             )
@@ -184,7 +184,7 @@ public class DatabaseManager {
         // Use different syntax for MySQL vs SQLite
         if (isMySQL) {
             preparedStatements.put("INSERT_PLAYER", connection.prepareStatement(
-                "INSERT INTO players (uuid, username, rank) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE username = VALUES(username), rank = VALUES(rank), updated_at = CURRENT_TIMESTAMP"));
+                "INSERT INTO players (uuid, username, `rank`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE username = VALUES(username), `rank` = VALUES(`rank`), updated_at = CURRENT_TIMESTAMP"));
         } else {
             preparedStatements.put("INSERT_PLAYER", connection.prepareStatement(
                 "INSERT OR REPLACE INTO players (uuid, username, rank) VALUES (?, ?, ?)"));
@@ -206,7 +206,7 @@ public class DatabaseManager {
             "UPDATE players SET current_nickname = ?, updated_at = CURRENT_TIMESTAMP WHERE uuid = ?"));
         
         preparedStatements.put("UPDATE_PLAYER_RANK", connection.prepareStatement(
-            "UPDATE players SET rank = ?, updated_at = CURRENT_TIMESTAMP WHERE uuid = ?"));
+            "UPDATE players SET `rank` = ?, updated_at = CURRENT_TIMESTAMP WHERE uuid = ?"));
         
         // Prefix queries
         preparedStatements.put("SELECT_AVAILABLE_PREFIXES", connection.prepareStatement(
@@ -228,7 +228,7 @@ public class DatabaseManager {
         preparedStatements.put("INSERT_ANALYTICS", connection.prepareStatement(
             "INSERT INTO usage_analytics (player_uuid, action_type, old_value, new_value) VALUES (?, ?, ?, ?)"));
         
-        preparedStatements.put("INSERT_CUSTOM_PREFIX_REQUEST", connection.prepareStatement(
+        preparedStatements.put("INSERT_SIMPLE_CUSTOM_PREFIX_REQUEST", connection.prepareStatement(
             "INSERT INTO custom_prefix_requests (player_uuid, requested_text) VALUES (?, ?)"));
     }
     
@@ -383,7 +383,7 @@ public class DatabaseManager {
     public CompletableFuture<Void> insertCustomPrefixRequest(UUID uuid, String prefixText) {
         return CompletableFuture.runAsync(() -> {
             try {
-                PreparedStatement stmt = preparedStatements.get("INSERT_CUSTOM_PREFIX_REQUEST");
+                PreparedStatement stmt = preparedStatements.get("INSERT_SIMPLE_CUSTOM_PREFIX_REQUEST");
                 stmt.setString(1, uuid.toString());
                 stmt.setString(2, prefixText);
                 stmt.executeUpdate();
