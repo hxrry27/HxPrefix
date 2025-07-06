@@ -20,19 +20,19 @@ public class MySQL {
     public boolean connect() {
         try {
             plugin.getLogger().info("Starting MySQL connection...");
-            plugin.getLogger().info("Host: " + plugin.getConfig().getString("mysql.host"));
-            plugin.getLogger().info("Port: " + plugin.getConfig().getInt("mysql.port"));
-            plugin.getLogger().info("Database: " + plugin.getConfig().getString("mysql.database"));
-            plugin.getLogger().info("Username: " + plugin.getConfig().getString("mysql.username"));
+            plugin.getLogger().info("Host: " + plugin.getConfig().getString("database.mysql.host"));
+            plugin.getLogger().info("Port: " + plugin.getConfig().getInt("database.mysql.port"));
+            plugin.getLogger().info("Database: " + plugin.getConfig().getString("database.mysql.database"));
+            plugin.getLogger().info("Username: " + plugin.getConfig().getString("database.mysql.username"));
             
             HikariConfig config = new HikariConfig();
             
-            String host = plugin.getConfig().getString("mysql.host");
-            int port = plugin.getConfig().getInt("mysql.port");
-            String database = plugin.getConfig().getString("mysql.database");
-            String username = plugin.getConfig().getString("mysql.username");
-            String password = plugin.getConfig().getString("mysql.password");
-            int poolSize = plugin.getConfig().getInt("mysql.pool-size", 10);
+            String host = plugin.getConfig().getString("database.mysql.host");
+            int port = plugin.getConfig().getInt("database.mysql.port");
+            String database = plugin.getConfig().getString("database.mysql.database");
+            String username = plugin.getConfig().getString("database.mysql.username");
+            String password = plugin.getConfig().getString("database.mysql.password");
+            int poolSize = plugin.getConfig().getInt("database.mysql.pool-size", 10);
             
             // Try a direct connection first to debug
             String jdbcUrl = "jdbc:mysql://" + host + ":" + port + "/" + database;
