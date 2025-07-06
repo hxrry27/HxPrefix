@@ -6,6 +6,7 @@ import com.yourserver.playercustomisation.database.PlayerDataManager;
 import com.yourserver.playercustomisation.listeners.PlayerJoinListener;
 import com.yourserver.playercustomisation.placeholders.CustomisationExpansion;
 import com.yourserver.playercustomisation.utils.PermissionUtils;
+import com.yourserver.playercustomisation.gui.MenuManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -16,6 +17,7 @@ public class PlayerCustomisation extends JavaPlugin implements CommandExecutor {
     private MySQL mysql;
     private PlayerDataManager playerDataManager;
     private CustomisationExpansion placeholderExpansion;
+    private MenuManager menuManager;
 
     @Override
     public void onEnable() {
@@ -29,6 +31,9 @@ public class PlayerCustomisation extends JavaPlugin implements CommandExecutor {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+
+        // Initialize menu manager
+         menuManager = new MenuManager(this);
 
         // Initialize managers
         playerDataManager = new PlayerDataManager(this, mysql);
@@ -62,6 +67,11 @@ public class PlayerCustomisation extends JavaPlugin implements CommandExecutor {
             playerDataManager.clearCache();
         }
 
+        //Closing menu manager BEFORE closing database
+        if (menuManager != null) {
+            menuManager.shutdown();
+        }
+
         // Close database connection
         if (mysql != null) {
             mysql.disconnect();
@@ -80,6 +90,10 @@ public class PlayerCustomisation extends JavaPlugin implements CommandExecutor {
         
         // Internal command for GUI interactions
         getCommand("pc-internal").setExecutor(new InternalCommand(this));
+    }
+
+    public MenuManager getMenuManager() {
+        return menuManager;
     }
 
     @Override
