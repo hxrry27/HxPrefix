@@ -89,6 +89,13 @@ public abstract class AbstractMenu {
     }
     
     /**
+     * Sets an item without any click handler (decoration only)
+     */
+    protected void setItem(int slot, ItemStack item) {
+        inventory.setItem(slot, item);
+    }
+    
+    /**
      * Fills a range of slots with an item
      */
     protected void fillSlots(int start, int end, ItemStack item) {
@@ -144,7 +151,7 @@ public abstract class AbstractMenu {
      */
     protected void addGlow(ItemStack item) {
         ItemMeta meta = item.getItemMeta();
-        meta.addEnchant(Enchantment.DURABILITY, 1, true);
+        meta.addEnchant(Enchantment.MENDING, 1, true);
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         item.setItemMeta(meta);
     }

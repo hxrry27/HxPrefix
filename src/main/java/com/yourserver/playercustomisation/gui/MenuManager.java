@@ -9,6 +9,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -101,8 +102,8 @@ public class MenuManager implements Listener {
         
         // Cancel any animations
         Runnable animation = menuAnimations.remove(uuid);
-        if (animation instanceof org.bukkit.scheduler.BukkitTask) {
-            ((org.bukkit.scheduler.BukkitTask) animation).cancel();
+        if (animation instanceof org.bukkit.scheduler.BukkitRunnable) {
+            ((org.bukkit.scheduler.BukkitRunnable) animation).cancel();
         }
         
         // Remove from tracking
@@ -115,7 +116,7 @@ public class MenuManager implements Listener {
     /**
      * Registers an animation task for a menu
      */
-    public void registerAnimation(Player player, Runnable task) {
+    public void registerAnimation(Player player, org.bukkit.scheduler.BukkitRunnable task) {
         menuAnimations.put(player.getUniqueId(), task);
     }
     
