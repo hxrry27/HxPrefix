@@ -1,32 +1,128 @@
-# Solid Colors
+# Solid Colors Configuration
 # Format: "name: hex"
 # The name is what players see in the menu
 
+# Default material for color items
+defaults:
+  material: PAPER
+
+# Color definitions
 colors:
-  Red: "#FF0000"
-  Dark Red: "#AA0000"
-  Light Red: "#FF5555"
+  Red:
+    hex: "#FF0000"
+    material: RED_DYE
+    slot: 10
+    
+  Dark_Red:
+    hex: "#AA0000"
+    material: RED_DYE
+    
+  Blue:
+    hex: "#0000FF"
+    material: BLUE_DYE
+    slot: 11
+    
+  Dark_Blue:
+    hex: "#0000AA"
+    material: BLUE_DYE
+    
+  Light_Blue:
+    hex: "#5555FF"
+    material: LIGHT_BLUE_DYE
+    
+  Aqua:
+    hex: "#55FFFF"
+    material: CYAN_DYE
+    slot: 12
+    
+  Dark_Aqua:
+    hex: "#00AAAA"
+    material: CYAN_DYE
+    
+  Green:
+    hex: "#00FF00"
+    material: LIME_DYE
+    slot: 13
+    
+  Dark_Green:
+    hex: "#00AA00"
+    material: GREEN_DYE
+    
+  Yellow:
+    hex: "#FFFF00"
+    material: YELLOW_DYE
+    slot: 14
+    
+  Gold:
+    hex: "#FFAA00"
+    material: GOLD_NUGGET
+    
+  Orange:
+    hex: "#FF8800"
+    material: ORANGE_DYE
+    
+  Pink:
+    hex: "#FF55FF"
+    material: PINK_DYE
+    slot: 15
+    
+  Purple:
+    hex: "#AA00AA"
+    material: PURPLE_DYE
+    
+  Hot_Pink:
+    hex: "#FF69B4"
+    material: MAGENTA_DYE
+    
+  White:
+    hex: "#FFFFFF"
+    material: WHITE_DYE
+    slot: 16
+    
+  Light_Gray:
+    hex: "#AAAAAA"
+    material: LIGHT_GRAY_DYE
+    
+  Gray:
+    hex: "#555555"
+    material: GRAY_DYE
+    
+  Black:
+    hex: "#000000"
+    material: BLACK_DYE
+
+# Menu configuration
+menu:
+  title: "&6&lName Color Selection &7({rank})"
+  size: 54
   
-  Blue: "#0000FF"
-  Dark Blue: "#0000AA"
-  Light Blue: "#5555FF"
-  Aqua: "#55FFFF"
-  Dark Aqua: "#00AAAA"
+  # Slot assignments
+  color-slots: [10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25]
   
-  Green: "#00FF00"
-  Dark Green: "#00AA00"
-  Light Green: "#55FF55"
-  
-  Yellow: "#FFFF00"
-  Gold: "#FFAA00"
-  Orange: "#FF8800"
-  
-  Purple: "#AA00AA"
-  Light Purple: "#FF55FF"
-  Pink: "#FFB6C1"
-  Hot Pink: "#FF69B4"
-  
-  White: "#FFFFFF"
-  Light Gray: "#AAAAAA"
-  Gray: "#555555"
-  Black: "#000000"
+  # Special item slots
+  special-slots:
+    reset-button: 49
+    
+  # Section headers
+  sections:
+    solid-title:
+      slot: 4
+      material: NAME_TAG
+      name: "&6&lSolid Colors"
+      lore:
+        - "&7Choose a solid color for your name"
+        - "&7Available for &e{rank} &7rank"
+        
+  # Reset button
+  reset-button:
+    material: BARRIER
+    name: "&c&lReset Color"
+    lore:
+      - "&7Remove your current name color"
+      - ""
+      - "&cClick to reset!"
+      
+  # Filler glass
+  filler:
+    material: GRAY_STAINED_GLASS_PANE
+    name: " "

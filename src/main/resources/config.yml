@@ -1,6 +1,3 @@
-# PlayerCustomisation Configuration
-# Define what each rank can access
-
 database:
   type: mysql
   mysql:
@@ -9,6 +6,27 @@ database:
     database: playercustomisation
     username: root
     password: "changeme"
+    pool-size: 10
+
+# Cache settings (in milliseconds)
+cache:
+  player-data-ttl: 30000  # 30 seconds
+  permission-ttl: 5000    # 5 seconds
+
+# Default values
+defaults:
+  fallback-rank: "default"
+  name-color: "&f"
+  material: NAME_TAG
+
+# Animation settings
+animations:
+  rainbow:
+    enabled: true
+    speed: 5
+  gradient:
+    enabled: true
+    speed: 10
 
 # Define your ranks and their permissions
 # Rank names MUST match your LuckPerms group names exactly!
@@ -26,12 +44,8 @@ ranks:
     gradients: false
     rainbow: false
     prefix: true
-    suffix: false
+    suffix: true
     nickname: true
-    # Limit which prefixes they can use (optional)
-    prefix-whitelist:
-      - "VIP"
-      - "MEMBER"
     
   vip+:
     colors: true
@@ -40,12 +54,40 @@ ranks:
     prefix: true
     suffix: true
     nickname: true
-    prefix-whitelist:
-      - "VIP"
-      - "VIP+"
-      - "ELITE"
     
-  premium:
+  mvp:
+    colors: true
+    gradients: true
+    rainbow: false
+    prefix: true
+    suffix: true
+    nickname: true
+    
+  mvp+:
+    colors: true
+    gradients: true
+    rainbow: true
+    prefix: true
+    suffix: true
+    nickname: true
+    
+  supporter:
+    colors: true
+    gradients: false
+    rainbow: false
+    prefix: true
+    suffix: true
+    nickname: true
+    
+  patron:
+    colors: true
+    gradients: true
+    rainbow: false
+    prefix: true
+    suffix: true
+    nickname: true
+    
+  devoted:
     colors: true
     gradients: true
     rainbow: true
@@ -53,12 +95,21 @@ ranks:
     suffix: true
     nickname: true
     custom-tags: true
-    # No whitelist = can use any prefix from prefix.yml
+    
+  legend:
+    colors: true
+    gradients: true
+    rainbow: true
+    prefix: true
+    suffix: true
+    nickname: true
+    custom-tags: true
 
 # Nickname settings
 nickname:
   min-length: 3
   max-length: 16
+  validation-pattern: "^[a-zA-Z0-9_]{3,16}$"
   # Blocked nicknames (case insensitive)
   blocked-names:
     - "admin"
@@ -66,17 +117,5 @@ nickname:
     - "staff"
     - "moderator"
     - "notch"
-
-# Messages
-messages:
-  prefix: "&8[&bCustom&8] "
-  no-permission: "{prefix}&cYou don't have permission!"
-  no-permission-rank: "{prefix}&cYour rank ({rank}) doesn't have access to this feature!"
-  color-changed: "{prefix}&aColor changed!"
-  gradient-changed: "{prefix}&aGradient applied!"
-  prefix-changed: "{prefix}&aPrefix set to: {value}"
-  suffix-changed: "{prefix}&aSuffix set to: {value}"
-  nickname-changed: "{prefix}&aNickname set to: {value}"
-  nickname-reset: "{prefix}&aNickname removed!"
-  invalid-nickname: "{prefix}&cNickname must be alphanumeric and {min}-{max} characters!"
-  value-reset: "{prefix}&aReset to default!"
+    - "server"
+    - "console"

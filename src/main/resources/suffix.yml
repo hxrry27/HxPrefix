@@ -1,38 +1,178 @@
-# Suffix Options
+# Suffix Options Configuration
 # Text that appears after the player name
-# Usually shorter than prefixes
 
+# Default values if not specified
+defaults:
+  material: PAPER
+  color: "&f"
+  glow: false
+
+# Suffix options
 suffixes:
   # Symbols
-  - "★"
-  - "✦"
-  - "♦"
-  - "✓"
-  - "✪"
-  - "⚡"
-  - "✯"
-  - "♛"
-  - "⚔"
-  - "☣"
-  - "✧"
-  - "◆"
-  
+  - value: "★"
+    material: GOLD_NUGGET
+    color: "&6&l"
+    glow: true
+    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend"]
+    
+  - value: "✦"
+    material: DIAMOND
+    color: "&b&l"
+    glow: true
+    ranks: ["vip+", "mvp", "mvp+", "patron", "devoted", "legend"]
+    
+  - value: "♦"
+    material: EMERALD
+    color: "&a&l"
+    glow: false
+    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend"]
+    
+  - value: "✓"
+    material: LIME_DYE
+    color: "&a&l"
+    glow: false
+    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend"]
+    
+  - value: "✪"
+    material: NETHER_STAR
+    color: "&f&l"
+    glow: true
+    ranks: ["mvp", "mvp+", "devoted", "legend"]
+    
+  - value: "⚡"
+    material: BLAZE_ROD
+    color: "&e&l"
+    glow: true
+    ranks: ["mvp+", "devoted", "legend"]
+    
+  - value: "✯"
+    material: END_CRYSTAL
+    color: "&d&l"
+    glow: true
+    ranks: ["patron", "devoted", "legend"]
+    
+  - value: "♛"
+    material: GOLDEN_HELMET
+    color: "&6&l"
+    glow: true
+    ranks: ["devoted", "legend"]
+    
+  - value: "⚔"
+    material: IRON_SWORD
+    color: "&7&l"
+    glow: false
+    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend"]
+    
+  - value: "☣"
+    material: POISONOUS_POTATO
+    color: "&2&l"
+    glow: true
+    ranks: ["mvp", "mvp+", "patron", "devoted", "legend"]
+    
   # Short tags
-  - "PRO"
-  - "GOD"
-  - "MVP"
-  - "ACE"
-  - "MAX"
-  
+  - value: "PRO"
+    material: REDSTONE
+    color: "&c&l"
+    glow: false
+    ranks: ["vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend"]
+    
+  - value: "GOD"
+    material: BEACON
+    color: "&5&l"
+    glow: true
+    ranks: ["mvp+", "devoted", "legend"]
+    
+  - value: "MVP"
+    material: DIAMOND_BLOCK
+    color: "&b&l"
+    glow: true
+    ranks: ["mvp", "mvp+"]
+    
+  - value: "ACE"
+    material: FIREWORK_ROCKET
+    color: "&d&l"
+    glow: false
+    ranks: ["mvp", "mvp+", "patron", "devoted", "legend"]
+    
+  - value: "MAX"
+    material: NETHERITE_INGOT
+    color: "&8&l"
+    glow: true
+    ranks: ["devoted", "legend"]
+    
   # Fun endings
-  - "YT"
-  - "TV"
-  - "GG"
-  - "XD"
-  
+  - value: "YT"
+    material: RED_CONCRETE
+    color: "&c&l"
+    glow: false
+    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend", "youtuber"]
+    
+  - value: "TV"
+    material: PURPLE_CONCRETE
+    color: "&5&l"
+    glow: false
+    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend", "streamer"]
+    
+  - value: "GG"
+    material: LIME_CONCRETE
+    color: "&a&l"
+    glow: false
+    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend"]
+    
+  - value: "XD"
+    material: YELLOW_CONCRETE
+    color: "&e&l"
+    glow: false
+    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend"]
+    
   # Rank indicators
-  - "I"
-  - "II" 
-  - "III"
-  - "IV"
-  - "V"
+  - value: "I"
+    material: IRON_INGOT
+    color: "&7&l"
+    glow: false
+    ranks: ["vip", "vip+", "supporter"]
+    
+  - value: "II"
+    material: GOLD_INGOT
+    color: "&6&l"
+    glow: false
+    ranks: ["mvp", "patron"]
+    
+  - value: "III"
+    material: DIAMOND
+    color: "&b&l"
+    glow: true
+    ranks: ["mvp+", "devoted"]
+    
+  - value: "IV"
+    material: EMERALD
+    color: "&a&l"
+    glow: true
+    ranks: ["devoted"]
+    
+  - value: "V"
+    material: NETHERITE_INGOT
+    color: "&5&l"
+    glow: true
+    ranks: ["legend"]
+
+# Menu Configuration
+menu:
+  title: "&b&lSuffix Selection &7({rank})"
+  size: 54
+  
+  special-slots:
+    reset-button: 49
+    
+  reset-button:
+    material: BARRIER
+    name: "&c&lReset Suffix"
+    lore:
+      - "&7Remove your suffix"
+      - ""
+      - "&cClick to reset!"
+    
+  filler:
+    material: GRAY_STAINED_GLASS_PANE
+    name: " "

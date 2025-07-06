@@ -36,9 +36,45 @@ public class ConfigManager {
     private YamlConfiguration suffixConfig;
     private YamlConfiguration messagesConfig;
     
+    // New prefix system data structures
+    private List<String> prefixTypes = new ArrayList<>();
+    private Map<String, List<StyleOption>> styleCategories = new LinkedHashMap<>();
+    private Map<String, RankPrefixAccess> rankPrefixAccess = new LinkedHashMap<>();
+    private final List<PrefixOption> prefixOptions = new ArrayList<>();
+    private final List<SuffixOption> suffixOptions = new ArrayList<>();
+
     public ConfigManager(PlayerCustomisation plugin) {
         this.plugin = plugin;
         loadAllConfigs();
+    }
+
+    // Inner classes for the new system
+    public static class StyleOption {
+        public final String name;
+        public final String format;
+        public final Material material;
+        public final boolean glow;
+        public final String conditional;
+        
+        public StyleOption(String name, String format, Material material, boolean glow, String conditional) {
+            this.name = name;
+            this.format = format;
+            this.material = material;
+            this.glow = glow;
+            this.conditional = conditional;
+        }
+    }
+    
+    public static class RankPrefixAccess {
+        public final List<String> prefixes;
+        public final List<String> categories;
+        public final boolean customTags;
+        
+        public RankPrefixAccess(List<String> prefixes, List<String> categories, boolean customTags) {
+            this.prefixes = prefixes;
+            this.categories = categories;
+            this.customTags = customTags;
+        }
     }
 
     public static class PrefixOption {
@@ -105,8 +141,8 @@ public class ConfigManager {
         plugin.getLogger().info("Configuration loaded:");
         plugin.getLogger().info("- " + solidColors.size() + " solid colors");
         plugin.getLogger().info("- " + gradients.size() + " gradients");
-        plugin.getLogger().info("- " + prefixes.size() + " prefixes");
-        plugin.getLogger().info("- " + suffixes.size() + " suffixes");
+        plugin.getLogger().info("- " + prefixOptions.size() + " prefix options");
+        plugin.getLogger().info("- " + suffixOptions.size() + " suffix options");
         plugin.getLogger().info("- " + ranks.size() + " ranks configured");
     }
     
@@ -157,9 +193,6 @@ public class ConfigManager {
             }
         }
     }
-    
-    private final List<PrefixOption> prefixOptions = new ArrayList<>();
-    private final List<SuffixOption> suffixOptions = new ArrayList<>();
 
     private void loadPrefixConfig() {
         File file = new File(plugin.getDataFolder(), "prefix.yml");
@@ -185,7 +218,7 @@ public class ConfigManager {
         ConfigurationSection styleCategoriesSection = prefixConfig.getConfigurationSection("style-categories");
         if (styleCategoriesSection != null) {
             for (String categoryName : styleCategoriesSection.getKeys(false)) {
-                List<StyleOption> styles = loadStyleCategory(categoryName, styleCategoriesSection.getConfigurationSection(categoryName), defaultMaterial, defaultGlow);
+                List<StyleOption> styles = loadStyleCategory(categoryName, styleCategoriesSection, defaultMaterial, defaultGlow);
                 styleCategories.put(categoryName, styles);
                 plugin.getLogger().info("Loaded category '" + categoryName + "' with " + styles.size() + " styles");
             }
@@ -212,6 +245,43 @@ public class ConfigManager {
         
         plugin.getLogger().info("Total prefix options: " + prefixOptions.size());
     }
+    
+    private List<StyleOption> loadStyleCategory(String categoryName, ConfigurationSection categoriesSection, String defaultMaterial, boolean defaultGlow) {
+        List<StyleOption> styles = new ArrayList<>();
+        
+        // Get the list of styles in this category
+        List<Map<?, ?>> styleList = categoriesSection.getMapList(categoryName);
+        
+        for (Map<?, ?> styleMap : styleList) {
+            try {
+                String name = (String) styleMap.get("name");
+                String format = (String) styleMap.get("format");
+                
+                // Handle type-safe default values
+                String materialName = styleMap.containsKey("material") ? 
+                    (String) styleMap.get("material") : defaultMaterial;
+                    
+                boolean glow = styleMap.containsKey("glow") ? 
+                    (Boolean) styleMap.get("glow") : defaultGlow;
+                    
+                String conditional = (String) styleMap.get("conditional");
+                
+                Material material;
+                try {
+                    material = Material.valueOf(materialName.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    plugin.getLogger().warning("Invalid material " + materialName + " for style " + name);
+                    material = Material.valueOf(defaultMaterial);
+                }
+                
+                styles.add(new StyleOption(name, format, material, glow, conditional));
+            } catch (Exception e) {
+                plugin.getLogger().warning("Error loading style in category " + categoryName + ": " + e.getMessage());
+            }
+        }
+        
+        return styles;
+    }
 
     private void generateAutoCombinations() {
         // For each rank
@@ -229,7 +299,7 @@ public class ConfigManager {
                     // For each style in this category
                     for (StyleOption style : styles) {
                         // Generate the combination
-                        String formattedValue = style.format.replace("{PREFIX}", prefixType);
+                        String formattedValue = style.format.replace("{PREFIX}", "[" + prefixType + "]");
                         String displayName = prefixType + " " + style.name;
                         
                         // Check if this combination already exists
@@ -258,32 +328,61 @@ public class ConfigManager {
                 }
             }
         }
-    }
-
-    private void loadPrefixCategory(String path) {
-        ConfigurationSection section = prefixConfig.getConfigurationSection(path);
-        if (section == null) return;
         
-        for (String key : section.getKeys(false)) {
-            ConfigurationSection prefixSection = section.getConfigurationSection(key);
-            if (prefixSection == null) continue;
-            
-            String name = prefixSection.getString("name");
-            String value = prefixSection.getString("value");
-            List<String> ranks = prefixSection.getStringList("ranks");
-            String materialName = prefixSection.getString("material", "NAME_TAG");
-            boolean glow = prefixSection.getBoolean("glow", false);
-            String conditional = prefixSection.getString("conditional", null);
-            
-            Material material;
-            try {
-                material = Material.valueOf(materialName);
-            } catch (IllegalArgumentException e) {
-                material = Material.NAME_TAG;
+        plugin.getLogger().info("Generated " + prefixOptions.size() + " prefix combinations");
+    }
+    
+    private PrefixOption findExistingOption(String displayName) {
+        for (PrefixOption option : prefixOptions) {
+            if (option.name.equals(displayName)) {
+                return option;
             }
-            
-            prefixOptions.add(new PrefixOption(name, value, ranks, material, glow, conditional));
         }
+        return null;
+    }
+    
+    private void loadSpecificPrefixes(String defaultMaterial, boolean defaultGlow) {
+        List<Map<?, ?>> specificList = prefixConfig.getMapList("specific-prefixes");
+        
+        if (specificList == null || specificList.isEmpty()) {
+            plugin.getLogger().info("No specific prefixes configured");
+            return;
+        }
+        
+        int count = 0;
+        for (Map<?, ?> prefixMap : specificList) {
+            try {
+                String name = (String) prefixMap.get("name");
+                String value = (String) prefixMap.get("value");
+                @SuppressWarnings("unchecked")
+                List<String> ranks = (List<String>) prefixMap.get("ranks");
+                
+                // Handle type-safe default values
+                String materialName = prefixMap.containsKey("material") ? 
+                    (String) prefixMap.get("material") : defaultMaterial;
+                    
+                boolean glow = prefixMap.containsKey("glow") ? 
+                    (Boolean) prefixMap.get("glow") : defaultGlow;
+                    
+                String conditional = (String) prefixMap.get("conditional");
+                
+                Material material;
+                try {
+                    material = Material.valueOf(materialName.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    plugin.getLogger().warning("Invalid material " + materialName + " for prefix " + name);
+                    material = Material.valueOf(defaultMaterial);
+                }
+                
+                // Add to the list
+                prefixOptions.add(new PrefixOption(name, value, ranks, material, glow, conditional));
+                count++;
+            } catch (Exception e) {
+                plugin.getLogger().warning("Error loading specific prefix: " + e.getMessage());
+            }
+        }
+        
+        plugin.getLogger().info("Loaded " + count + " specific prefixes");
     }
     
     private void loadSuffixConfig() {
@@ -314,9 +413,16 @@ public class ConfigManager {
         for (Map<?, ?> suffixMap : suffixList) {
             try {
                 String value = (String) suffixMap.get("value");
-                String materialName = (String) suffixMap.getOrDefault("material", defaultMaterialName);
-                String color = (String) suffixMap.getOrDefault("color", "&f&l");
-                boolean glow = (Boolean) suffixMap.getOrDefault("glow", false);
+                
+                // Handle type-safe default values
+                String materialName = suffixMap.containsKey("material") ? 
+                    (String) suffixMap.get("material") : defaultMaterialName;
+                    
+                String color = suffixMap.containsKey("color") ? 
+                    (String) suffixMap.get("color") : "&f&l";
+                    
+                boolean glow = suffixMap.containsKey("glow") ? 
+                    (Boolean) suffixMap.get("glow") : false;
                 
                 @SuppressWarnings("unchecked")
                 List<String> ranks = (List<String>) suffixMap.get("ranks");
@@ -335,13 +441,40 @@ public class ConfigManager {
                 }
                 
                 suffixOptions.add(new SuffixOption(value, material, color, glow, ranks));
-                plugin.getLogger().info("Loaded suffix: " + value + " for ranks: " + ranks);
             } catch (Exception e) {
                 plugin.getLogger().warning("Error loading suffix: " + e.getMessage());
             }
         }
         
         plugin.getLogger().info("Loaded " + suffixOptions.size() + " suffix options");
+    }
+
+    // Get available options for a rank
+    public List<PrefixOption> getAvailablePrefixOptions(String rank) {
+        List<PrefixOption> available = new ArrayList<>();
+        
+        plugin.getLogger().info("Getting available prefixes for rank: " + rank);
+        
+        for (PrefixOption option : prefixOptions) {
+            // Check if this rank can use this prefix (case-insensitive)
+            boolean canUse = false;
+            for (String allowedRank : option.ranks) {
+                if (allowedRank.equalsIgnoreCase(rank)) {
+                    canUse = true;
+                    break;
+                }
+            }
+            
+            if (canUse) {
+                // Check conditional (for future implementation)
+                if (option.conditional == null || checkCondition(option.conditional)) {
+                    available.add(option);
+                }
+            }
+        }
+        
+        plugin.getLogger().info("Found " + available.size() + " available prefixes for rank " + rank);
+        return available;
     }
 
     public List<SuffixOption> getAvailableSuffixOptions(String rank) {
@@ -450,6 +583,17 @@ public class ConfigManager {
             case "suffix.yml":
                 config.set("suffixes", Arrays.asList("★", "✦", "♦", "✓", "PRO"));
                 break;
+                
+            case "messages.yml":
+                config.set("prefix", "&8[&bCustom&8] ");
+                config.set("permissions.no-permission", "{prefix}&cYou don't have permission!");
+                config.set("color.changed", "{prefix}&aYour name color has been updated!");
+                config.set("color.reset", "{prefix}&aYour name color has been reset!");
+                config.set("prefix.changed", "{prefix}&aYour prefix has been set to: {value}");
+                config.set("prefix.removed", "{prefix}&aYour prefix has been removed!");
+                config.set("suffix.changed", "{prefix}&aYour suffix has been set to: {value}");
+                config.set("suffix.removed", "{prefix}&aYour suffix has been removed!");
+                break;
         }
         
         try {
@@ -514,57 +658,6 @@ public class ConfigManager {
         return settings != null && settings.customTags;
     }
     
-    // Get available options for a rank
-    
-    public List<PrefixOption> getAvailablePrefixOptions(String rank) {
-        List<PrefixOption> available = new ArrayList<>();
-        
-        plugin.getLogger().info("Getting available prefixes for rank: " + rank);
-        
-        for (PrefixOption option : prefixOptions) {
-            // Check if this rank can use this prefix (case-insensitive)
-            boolean canUse = false;
-            for (String allowedRank : option.ranks) {
-                if (allowedRank.equalsIgnoreCase(rank)) {
-                    canUse = true;
-                    break;
-                }
-            }
-            
-            if (canUse) {
-                // Check conditional (for future implementation)
-                if (option.conditional == null || checkCondition(option.conditional)) {
-                    available.add(option);
-                    plugin.getLogger().info("  - " + option.name + " is available");
-                }
-            }
-        }
-        
-        plugin.getLogger().info("Total available prefixes: " + available.size());
-        return available;
-    }
-    
-    public List<String> getAvailableSuffixes(String rank) {
-        RankSettings settings = ranks.get(rank.toLowerCase());
-        if (settings == null || !settings.suffix) {
-            return Collections.emptyList();
-        }
-        
-        // Check whitelist
-        if (settings.suffixWhitelist != null && !settings.suffixWhitelist.isEmpty()) {
-            List<String> available = new ArrayList<>();
-            for (String suffix : suffixes) {
-                if (settings.suffixWhitelist.contains(suffix)) {
-                    available.add(suffix);
-                }
-            }
-            return available;
-        }
-        
-        // No whitelist = all suffixes
-        return new ArrayList<>(suffixes);
-    }
-    
     // Message handling
     
     public String getMessage(String key) {
@@ -618,7 +711,7 @@ public class ConfigManager {
         return true;
     }
 
-    //additional colormenu configs
+    // Additional menu config methods
     public ConfigurationSection getColorMenuConfig() {
         return colorsConfig;
     }

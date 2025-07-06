@@ -1,0 +1,66 @@
+# PlayerCustomisation Messages
+# All user-facing messages
+
+# Plugin prefix
+prefix: "&8[&bCustom&8] "
+
+# Permission messages
+permissions:
+  no-permission: "{prefix}&cYou don't have permission to use this command!"
+  no-permission-rank: "{prefix}&cYour rank (&e{rank}&c) doesn't have access to this feature!"
+
+# Color messages
+color:
+  changed: "{prefix}&aYour name color has been updated!"
+  reset: "{prefix}&aYour name color has been reset!"
+  
+# Prefix messages
+prefix:
+  changed: "{prefix}&aYour prefix has been set to: {value}"
+  removed: "{prefix}&aYour prefix has been removed!"
+  
+# Suffix messages
+suffix:
+  changed: "{prefix}&aYour suffix has been set to: {value}"
+  removed: "{prefix}&aYour suffix has been removed!"
+  
+# Nickname messages
+nickname:
+  changed: "{prefix}&aYour nickname has been set to: &f{value}"
+  removed: "{prefix}&aYour nickname has been removed!"
+  invalid: "{prefix}&cNickname must be alphanumeric and {min}-{max} characters!"
+  blocked: "{prefix}&cThat nickname is not allowed!"
+  
+# Tag request messages
+tags:
+  requested: "{prefix}&aYour custom tag request has been submitted for review!"
+  no-pending: "{prefix}&7There are no pending tag requests."
+  pending-header: "&8&m----------&r &b&lPending Tag Requests &8&m----------"
+  pending-format: "&7{id}. &e{player} &7requested: &f{tag}"
+  pending-footer: "&8&m---------------------------------------"
+  info-line1: "&7Use &f/requesttag <name> &7to request a custom prefix!"
+  info-line2: "&7Example: &f/requesttag LEGEND"
+  info-line3: "&7Staff will review and approve/deny your request."
+  
+# Reload messages
+reload:
+  success: "{prefix}&aConfiguration reloaded successfully!"
+  mysql-info: "&7MySQL Host: &f{host}"
+  loaded-info: "&7Loaded: &f{colors} colors&7, &f{gradients} gradients&7, &f{prefixes} prefixes&7, &f{suffixes} suffixes"
+  
+# Error messages
+errors:
+  database-error: "{prefix}&cDatabase error! Please contact an administrator."
+  invalid-player: "{prefix}&cPlayer not found!"
+  invalid-color: "{prefix}&cInvalid color format!"
+  invalid-prefix: "{prefix}&cInvalid prefix!"
+  invalid-suffix: "{prefix}&cInvalid suffix!"
+  
+# GUI messages
+gui:
+  loading: "&7Loading..."
+  click-to-select: "&eClick to select!"
+  click-to-apply: "&eClick to apply!"
+  click-to-reset: "&cClick to reset!"
+  preview: "&7Preview: {preview}"
+  current: "&aCurrent: {value}"
