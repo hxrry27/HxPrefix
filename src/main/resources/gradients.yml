@@ -1,0 +1,29 @@
+# Gradient Colors
+# Format: "name: [start_hex, end_hex]"
+# You can use 3+ colors for multi-point gradients
+
+gradients:
+  # Fire themes
+  Fire: ["#FF0000", "#FFFF00"]
+  Inferno: ["#FF0000", "#FF6600", "#FFFF00"]
+  Lava: ["#FF4500", "#FF0000", "#8B0000"]
+  
+  # Water themes
+  Ocean: ["#0080FF", "#00FFFF"]
+  Deep Sea: ["#000080", "#0080FF", "#00FFFF"]
+  Ice: ["#B0E0E6", "#00FFFF", "#1E90FF"]
+  
+  # Nature themes
+  Forest: ["#228B22", "#00FF00", "#ADFF2F"]
+  Spring: ["#00FF00", "#7FFF00", "#FFFF00"]
+  Autumn: ["#FF8C00", "#FF4500", "#8B4513"]
+  
+  # Galaxy themes
+  Galaxy: ["#8B00FF", "#FF00FF", "#00FFFF"]
+  Nebula: ["#FF00FF", "#8A2BE2", "#4B0082"]
+  Aurora: ["#00FF87", "#60EFFF", "#FF00FF"]
+  
+  # Candy themes
+  Cotton Candy: ["#FFB6C1", "#87CEEB", "#DDA0DD"]
+  Bubblegum: ["#FF69B4", "#FFB6C1", "#FFC0CB"]
+  Sweet Dreams: ["#F8B195", "#F67280", "#C06C84"]

@@ -1,0 +1,38 @@
+# Suffix Options
+# Text that appears after the player name
+# Usually shorter than prefixes
+
+suffixes:
+  # Symbols
+  - "★"
+  - "✦"
+  - "♦"
+  - "✓"
+  - "✪"
+  - "⚡"
+  - "✯"
+  - "♛"
+  - "⚔"
+  - "☣"
+  - "✧"
+  - "◆"
+  
+  # Short tags
+  - "PRO"
+  - "GOD"
+  - "MVP"
+  - "ACE"
+  - "MAX"
+  
+  # Fun endings
+  - "YT"
+  - "TV"
+  - "GG"
+  - "XD"
+  
+  # Rank indicators
+  - "I"
+  - "II" 
+  - "III"
+  - "IV"
+  - "V"

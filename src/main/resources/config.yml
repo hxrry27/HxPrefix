@@ -1,68 +1,82 @@
-mysql:
-  host: customisation-mysql
-  port: 3306
-  database: playercustomisation
-  username: playercustomisation
-  password: "4srDSUWzYy!0swf0k6uJGzHk*V#cZ4tQh82XzHVQYZfBrydynjcd2&Ca74ktnQ^J"
-  pool-size: 10
+# PlayerCustomisation Configuration
+# Define what each rank can access
 
-# Color options for /color command
-colors:
-  supporter:
-    - name: "&cRed"
-      value: "&c"
-    - name: "&aGreen"
-      value: "&a"
-    - name: "&bAqua"
-      value: "&b"
-    - name: "&dPink"
-      value: "&d"
-    - name: "&eYellow"
-      value: "&e"
-    - name: "&fWhite"
-      value: "&f"
-  
-  patron: # Includes all supporter colors plus:
-    gradients:
-      - name: "Fire"
-        value: "<gradient:#ff0000:#ffff00>"
-      - name: "Ocean"
-        value: "<gradient:#0080ff:#00ffff>"
-      - name: "Nature"
-        value: "<gradient:#00ff00:#ffff00>"
-      - name: "Galaxy"
-        value: "<gradient:#8b00ff:#ff00ff>"
+database:
+  type: mysql
+  mysql:
+    host: localhost
+    port: 3306
+    database: playercustomisation
+    username: root
+    password: "changeme"
 
-# Prefix style options
-prefix-styles:
-  supporter:
-    - name: "&c[&fSUPPORTER&c]"
-      value: "&c[&fSUPPORTER&c]"
-    - name: "&a[&fSUPPORTER&a]"
-      value: "&a[&fSUPPORTER&a]"
-    - name: "&b[&fSUPPORTER&b]"
-      value: "&b[&fSUPPORTER&b]"
-  
-  patron: # Includes all supporter styles plus:
-    - name: "<gradient:#ff0000:#ffff00>[PATRON]</gradient>"
-      value: "<gradient:#ff0000:#ffff00>[PATRON]</gradient>"
-    - name: "<gradient:#0080ff:#00ffff>[PATRON]</gradient>"
-      value: "<gradient:#0080ff:#00ffff>[PATRON]</gradient>"
-  
-  devoted: # Includes all patron styles plus:
-    - name: "<gradient:#ff00ff:#00ffff>[DEVOTED]</gradient>"
-      value: "<gradient:#ff00ff:#00ffff>[DEVOTED]</gradient>"
-    - name: "<rainbow>[DEVOTED]</rainbow>"
-      value: "<rainbow>[DEVOTED]</rainbow>"
+# Define your ranks and their permissions
+# Rank names MUST match your LuckPerms group names exactly!
+ranks:
+  default:
+    colors: false
+    gradients: false
+    rainbow: false
+    prefix: false
+    suffix: false
+    nickname: false
+    
+  vip:
+    colors: true
+    gradients: false
+    rainbow: false
+    prefix: true
+    suffix: false
+    nickname: true
+    # Limit which prefixes they can use (optional)
+    prefix-whitelist:
+      - "VIP"
+      - "MEMBER"
+    
+  vip+:
+    colors: true
+    gradients: true
+    rainbow: false
+    prefix: true
+    suffix: true
+    nickname: true
+    prefix-whitelist:
+      - "VIP"
+      - "VIP+"
+      - "ELITE"
+    
+  premium:
+    colors: true
+    gradients: true
+    rainbow: true
+    prefix: true
+    suffix: true
+    nickname: true
+    custom-tags: true
+    # No whitelist = can use any prefix from prefix.yml
 
+# Nickname settings
+nickname:
+  min-length: 3
+  max-length: 16
+  # Blocked nicknames (case insensitive)
+  blocked-names:
+    - "admin"
+    - "owner"
+    - "staff"
+    - "moderator"
+    - "notch"
+
+# Messages
 messages:
-  prefix: "&8[&bPlayerCustom&8] "
-  no-permission: "&cYou don't have permission to use this command!"
-  color-changed: "&aYour name color has been updated!"
-  prefix-changed: "&aYour prefix has been updated!"
-  nickname-changed: "&aYour nickname has been changed to: &f%nickname%"
-  nickname-reset: "&aYour nickname has been reset!"
-  invalid-nickname: "&cNickname must be 3-16 characters and alphanumeric!"
-  tag-requested: "&aYour custom tag request has been submitted for review!"
-  tag-approved: "&aYour custom tag '%tag%' has been approved!"
-  tag-denied: "&cYour custom tag request has been denied."
+  prefix: "&8[&bCustom&8] "
+  no-permission: "{prefix}&cYou don't have permission!"
+  no-permission-rank: "{prefix}&cYour rank ({rank}) doesn't have access to this feature!"
+  color-changed: "{prefix}&aColor changed!"
+  gradient-changed: "{prefix}&aGradient applied!"
+  prefix-changed: "{prefix}&aPrefix set to: {value}"
+  suffix-changed: "{prefix}&aSuffix set to: {value}"
+  nickname-changed: "{prefix}&aNickname set to: {value}"
+  nickname-reset: "{prefix}&aNickname removed!"
+  invalid-nickname: "{prefix}&cNickname must be alphanumeric and {min}-{max} characters!"
+  value-reset: "{prefix}&aReset to default!"

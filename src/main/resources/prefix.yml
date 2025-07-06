@@ -1,0 +1,39 @@
+# Prefix Options
+# These are the actual text options players can choose
+# The plugin will handle the coloring based on their rank
+
+prefixes:
+  # Basic ranks
+  - "PLAYER"
+  - "MEMBER"
+  - "USER"
+  
+  # VIP tiers
+  - "VIP"
+  - "VIP+"
+  - "ELITE"
+  - "ELITE+"
+  
+  # Premium tiers  
+  - "PREMIUM"
+  - "DELUXE"
+  - "ULTIMATE"
+  - "LEGENDARY"
+  
+  # Themed prefixes
+  - "HERO"
+  - "CHAMPION"
+  - "WARRIOR"
+  - "KNIGHT"
+  
+  # Fun prefixes
+  - "PRO"
+  - "EPIC"
+  - "MEGA"
+  - "ULTRA"
+  
+  # Supporter tags
+  - "SUPPORTER"
+  - "PATRON"
+  - "SPONSOR"
+  - "DONOR"

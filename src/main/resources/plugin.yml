@@ -11,11 +11,11 @@ commands:
   color:
     description: Opens color selection GUI
     usage: /<command>
-    permission: playercustomisation.color
+    aliases: [colors, namecolor]
   prefix:
     description: Opens prefix selection GUI  
     usage: /<command>
-    permission: playercustomisation.prefix
+    aliases: [prefixes, tag]
   suffix:
     description: Opens suffix selection GUI
     usage: /<command>
@@ -23,11 +23,11 @@ commands:
   nick:
     description: Sets or removes nickname
     usage: /<command> <nickname|off>
-    permission: playercustomisation.nick
+    aliases: [nickname]
   requesttag:
     description: Request custom tag
     usage: /<command> <tag>
-    permission: playercustomisation.customtag
+    aliases: [customtag]
   managetags:
     description: Staff command to review tags
     usage: /<command>
@@ -40,22 +40,21 @@ commands:
     description: Internal command for GUI interactions
     usage: /<command>
 
+# Only admin permissions remain
 permissions:
-  playercustomisation.color:
-    default: false
-    description: Access to /color command
-  playercustomisation.prefix:
-    default: false
-    description: Access to /prefix command
-  playercustomisation.nick:
-    default: false
-    description: Access to /nick command
-  playercustomisation.customtag:
-    default: false
-    description: Access to request custom tags
+  playercustomisation.admin:
+    default: op
+    description: All admin permissions
+    children:
+      playercustomisation.admin.tags: true
+      playercustomisation.admin.reload: true
+      playercustomisation.admin.bypass: true
   playercustomisation.admin.tags:
     default: op
     description: Manage custom tag requests
   playercustomisation.admin.reload:
     default: op
     description: Reload plugin configuration
+  playercustomisation.admin.bypass:
+    default: op
+    description: Bypass rank restrictions

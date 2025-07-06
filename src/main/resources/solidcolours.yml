@@ -1,0 +1,32 @@
+# Solid Colors
+# Format: "name: hex"
+# The name is what players see in the menu
+
+colors:
+  Red: "#FF0000"
+  Dark Red: "#AA0000"
+  Light Red: "#FF5555"
+  
+  Blue: "#0000FF"
+  Dark Blue: "#0000AA"
+  Light Blue: "#5555FF"
+  Aqua: "#55FFFF"
+  Dark Aqua: "#00AAAA"
+  
+  Green: "#00FF00"
+  Dark Green: "#00AA00"
+  Light Green: "#55FF55"
+  
+  Yellow: "#FFFF00"
+  Gold: "#FFAA00"
+  Orange: "#FF8800"
+  
+  Purple: "#AA00AA"
+  Light Purple: "#FF55FF"
+  Pink: "#FFB6C1"
+  Hot Pink: "#FF69B4"
+  
+  White: "#FFFFFF"
+  Light Gray: "#AAAAAA"
+  Gray: "#555555"
+  Black: "#000000"

@@ -8,7 +8,6 @@ import com.yourserver.playercustomisation.placeholders.CustomisationExpansion;
 import com.yourserver.playercustomisation.utils.PermissionUtils;
 import com.yourserver.playercustomisation.gui.MenuManager;
 import com.yourserver.playercustomisation.config.ConfigManager;
-import com.yourserver.playercustomisation.commands.SuffixCommand;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -114,13 +113,19 @@ public class PlayerCustomisation extends JavaPlugin implements CommandExecutor {
                 return true;
             }
 
-            reloadConfig();
+            configManager.loadAllConfigs();
             PermissionUtils.clearCache();
             playerDataManager.clearCache();
+
             sender.sendMessage("§aPlayerCustomisation configuration reloaded!");
-            return true;
-        }
-        return false;
+            sender.sendMessage("§7Loaded: " + 
+            configManager.getSolidColors().size() + " colors, " +
+            configManager.getGradients().size() + " gradients, " +
+            configManager.getAllPrefixes().size() + " prefixes, " +
+            configManager.getAllSuffixes().size() + " suffixes");
+        return true;
+    }
+    return false;
     }
 
     // Getters

@@ -71,69 +71,65 @@ public class ColorSelectionMenu extends AbstractMenu {
     }
     
     private void addSolidColors() {
-        // Define solid colors matching your DeluxeMenus setup
-        Map<String, ColorData> solidColors = new LinkedHashMap<>();
-        solidColors.put("red", new ColorData("&c&lRed", "&c", Material.RED_DYE, "#FF0000"));
-        solidColors.put("blue", new ColorData("&9&lBlue", "&9", Material.BLUE_DYE, "#0000FF"));
-        solidColors.put("green", new ColorData("&a&lGreen", "&a", Material.GREEN_DYE, "#00FF00"));
-        solidColors.put("aqua", new ColorData("&b&lAqua", "&b", Material.CYAN_DYE, "#00FFFF"));
-        solidColors.put("pink", new ColorData("&d&lPink", "&d", Material.PINK_DYE, "#FF55FF"));
-        solidColors.put("yellow", new ColorData("&e&lYellow", "&e", Material.YELLOW_DYE, "#FFFF00"));
-        solidColors.put("white", new ColorData("&f&lWhite", "&f", Material.WHITE_DYE, "#FFFFFF"));
-        
+    Map<String, String> solidColors = plugin.getConfigManager().getSolidColors();
+    
         int index = 0;
-        for (Map.Entry<String, ColorData> entry : solidColors.entrySet()) {
+        for (Map.Entry<String, String> entry : solidColors.entrySet()) {
             if (index >= SOLID_COLOR_SLOTS.length) break;
             
-            ColorData color = entry.getValue();
+            String colorName = entry.getKey();
+            String hexValue = entry.getValue();
             int slot = SOLID_COLOR_SLOTS[index++];
             
-            List<String> lore = Arrays.asList(
-                "&7Preview: " + color.legacyCode + player.getName(),
-                "",
-                "&eClick to apply!"
-            );
+            // Determine material based on color
+            Material material = MenuUtils.getMaterialForColor(colorName, false, false);
             
-            setItem(slot, createItem(color.material, color.displayName, lore), (Runnable) () -> {
-                applyColor(color.displayName.replace("&l", ""), MenuUtils.hexToMiniMessage(color.hexValue));
-            });
-        }
-    }
-    
-    private void addGradientColors() {
-        // Define gradients matching your config
-        Map<String, GradientData> gradients = new LinkedHashMap<>();
-        gradients.put("fire", new GradientData("&c&lFire Gradient", 
-            Arrays.asList("#FF0000", "#FFFF00"), Material.BLAZE_POWDER));
-        gradients.put("ocean", new GradientData("&9&lOcean Gradient", 
-            Arrays.asList("#0080FF", "#00FFFF"), Material.PRISMARINE_CRYSTALS));
-        gradients.put("nature", new GradientData("&a&lNature Gradient", 
-            Arrays.asList("#00FF00", "#FFFF00"), Material.EMERALD));
-        gradients.put("galaxy", new GradientData("&5&lGalaxy Gradient", 
-            Arrays.asList("#8B00FF", "#FF00FF"), Material.ENDER_EYE));
-        
-        int index = 0;
-        for (Map.Entry<String, GradientData> entry : gradients.entrySet()) {
-            if (index >= GRADIENT_SLOTS.length) break;
-            
-            GradientData gradient = entry.getValue();
-            int slot = GRADIENT_SLOTS[index++];
-            
-            // Create gradient preview
-            String gradientValue = MenuUtils.gradientToMiniMessage(
-                gradient.colors.toArray(new String[0]));
-            String preview = MenuUtils.createPreview(gradientValue, player.getName());
+            // Create color value for storage
+            String colorValue = MenuUtils.hexToMiniMessage(hexValue);
+            String preview = MenuUtils.createPreview(colorValue, player.getName());
             
             List<String> lore = Arrays.asList(
-                "&7Gradient: " + getGradientDescription(gradient),
                 "&7Preview: " + preview,
                 "",
                 "&eClick to apply!"
             );
             
-            // Make gradient items glow
-            setItem(slot, createGlowingItem(gradient.material, gradient.displayName, lore), (Runnable) () -> {
-                applyColor(gradient.displayName.replace("&l", ""), gradientValue);
+            // Use the color name as display
+            String displayName = MenuUtils.colorize(MenuUtils.toBirdflop(hexValue) + "&l" + colorName);
+            
+            setItem(slot, createItem(material, displayName, lore), (Runnable) () -> {
+                applyColor(colorName, colorValue);
+            });
+        }
+    }
+    
+    private void addGradientColors() {
+    Map<String, List<String>> gradients = plugin.getConfigManager().getGradients();
+    
+        int index = 0;
+        for (Map.Entry<String, List<String>> entry : gradients.entrySet()) {
+            if (index >= GRADIENT_SLOTS.length) break;
+            
+            String gradientName = entry.getKey();
+            List<String> colors = entry.getValue();
+            int slot = GRADIENT_SLOTS[index++];
+            
+            // Create gradient value
+            String gradientValue = MenuUtils.gradientToMiniMessage(colors.toArray(new String[0]));
+            String preview = MenuUtils.createPreview(gradientValue, player.getName());
+            
+            List<String> lore = Arrays.asList(
+                "&7Gradient: " + String.join(" &7→ ", colors),
+                "&7Preview: " + preview,
+                "",
+                "&eClick to apply!"
+            );
+            
+            // Material based on gradient type
+            Material material = Material.FIREWORK_STAR;
+            
+            setItem(slot, createGlowingItem(material, "&d&l" + gradientName, lore), (Runnable) () -> {
+                applyColor(gradientName, gradientValue);
             });
         }
     }
@@ -238,63 +234,11 @@ public class ColorSelectionMenu extends AbstractMenu {
     
     // Helper methods
     private boolean canUseGradients() {
-        // TODO: Check with ConfigManager when implemented
-        // For now, check rank name
-        return rank.equalsIgnoreCase("patron") || 
-               rank.equalsIgnoreCase("devoted") || 
-               rank.equalsIgnoreCase("premium");
-    }
-    
+    return plugin.getConfigManager().canUseGradients(rank);
+}
+
     private boolean canUseRainbow() {
-        // TODO: Check with ConfigManager when implemented
-        // For now, check rank name
-        return rank.equalsIgnoreCase("devoted") || 
-               rank.equalsIgnoreCase("premium");
+        return plugin.getConfigManager().canUseRainbow(rank);
     }
     
-    private String getGradientDescription(GradientData gradient) {
-        // Convert hex colors to legacy format for description
-        StringBuilder desc = new StringBuilder();
-        for (int i = 0; i < gradient.colors.size(); i++) {
-            if (i > 0) desc.append(" &7→ ");
-            String hex = gradient.colors.get(i);
-            // Map to approximate legacy color
-            if (hex.startsWith("#FF0000")) desc.append("&cRed");
-            else if (hex.startsWith("#FFFF00")) desc.append("&eYellow");
-            else if (hex.startsWith("#0080FF")) desc.append("&9Blue");
-            else if (hex.startsWith("#00FFFF")) desc.append("&bCyan");
-            else if (hex.startsWith("#00FF00")) desc.append("&aGreen");
-            else if (hex.startsWith("#8B00FF")) desc.append("&5Purple");
-            else if (hex.startsWith("#FF00FF")) desc.append("&dMagenta");
-            else desc.append("&f").append(hex);
-        }
-        return desc.toString();
-    }
-    
-    // Data classes
-    private static class ColorData {
-        final String displayName;
-        final String legacyCode;
-        final Material material;
-        final String hexValue;
-        
-        ColorData(String displayName, String legacyCode, Material material, String hexValue) {
-            this.displayName = displayName;
-            this.legacyCode = legacyCode;
-            this.material = material;
-            this.hexValue = hexValue;
-        }
-    }
-    
-    private static class GradientData {
-        final String displayName;
-        final List<String> colors;
-        final Material material;
-        
-        GradientData(String displayName, List<String> colors, Material material) {
-            this.displayName = displayName;
-            this.colors = colors;
-            this.material = material;
-        }
-    }
 }
