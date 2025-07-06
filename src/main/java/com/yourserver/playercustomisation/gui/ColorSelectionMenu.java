@@ -150,28 +150,26 @@ public class ColorSelectionMenu extends AbstractMenu {
     }
     
     private void applyColor(String colorName, String colorValue) {
-        plugin.getPlayerDataManager().getPlayerData(player.getUniqueId())
-            .thenAccept(data -> {
-                if (data == null) {
-                    data = new PlayerData(player.getUniqueId(), player.getName());
-                }
+    plugin.getPlayerDataManager().getPlayerData(player.getUniqueId())
+        .thenAccept(data -> {
+            if (data == null) {
+                data = new PlayerData(player.getUniqueId(), player.getName());
+            }
+            
+            data.setNameColor(colorValue);
+            
+            plugin.getPlayerDataManager().savePlayerData(data).thenRun(() -> {
+                // Play sound
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
                 
-                data.setNameColor(colorValue);
+                // Use ConfigManager for message
+                String message = plugin.getConfigManager().getMessage("color-changed");
+                player.sendMessage(MenuUtils.colorize(message));
                 
-                plugin.getPlayerDataManager().savePlayerData(data).thenRun(() -> {
-                    // Play sound
-                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
-                    
-                    // Send message
-                    String preview = MenuUtils.createPreview(colorValue, player.getName());
-                    player.sendMessage(MenuUtils.colorize(
-                        "&8[&bCustom&8] &aColor changed to: " + preview
-                    ));
-                    
-                    // Close menu
-                    player.closeInventory();
-                });
+                // Close menu
+                player.closeInventory();
             });
+        });
     }
     
     private void resetColor() {

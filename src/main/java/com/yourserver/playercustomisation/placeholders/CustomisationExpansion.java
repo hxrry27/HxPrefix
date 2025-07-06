@@ -56,7 +56,8 @@ public class CustomisationExpansion extends PlaceholderExpansion {
                 if (data != null && data.hasCustomPrefix()) {
                     return ColorUtils.colorize(data.getCustomPrefix());
                 } else if (data != null && data.getPrefixStyle() != null) {
-                    return ColorUtils.colorize(data.getPrefixStyle());
+                    // Just return the prefix as-is, no brackets!
+                    return ColorUtils.colorize(data.getPrefixStyle()) + " ";  // Add space after prefix
                 }
                 return "";
 

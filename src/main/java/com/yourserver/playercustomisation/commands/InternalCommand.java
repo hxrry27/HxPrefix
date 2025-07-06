@@ -75,9 +75,14 @@ public class InternalCommand implements CommandExecutor {
                 if (data == null) {
                     data = new PlayerData(player.getUniqueId(), player.getName());
                 }
+                
+                // Store the prefix WITH its color/formatting
                 data.setPrefixStyle(prefixValue);
+                
                 plugin.getPlayerDataManager().savePlayerData(data).thenRun(() -> {
-                    String message = plugin.getConfig().getString("messages.prefix-changed", "&aYour prefix has been updated!");
+                    // Use the updated getMessage that doesn't have [Custom]
+                    String message = plugin.getConfigManager().getMessage("prefix-changed");
+                    message = message.replace("{value}", ColorUtils.colorize(prefixValue));
                     player.sendMessage(ColorUtils.colorize(message));
                 });
             });

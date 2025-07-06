@@ -46,20 +46,48 @@ public class MenuUtils {
     }
     
     /**
-     * Converts a hex color to MiniMessage format for storage
-     * Input: "#FF0000" or "&#FF0000" or "FF0000"
-     * Output: "<color:#FF0000>"
+     * Converts a hex color or MiniMessage format to proper MiniMessage
+     * Input: "#FF0000" or "<red>" or "<color:#FF0000>"
+     * Output: Proper MiniMessage format
      */
-    public static String hexToMiniMessage(String hex) {
-        // Clean the input
-        hex = hex.replace("&#", "").replace("#", "").replace("<", "").replace(">", "");
-        
-        // Ensure it's 6 characters
-        if (hex.length() != 6) {
-            return "<color:#FFFFFF>"; // Default to white
+    public static String hexToMiniMessage(String input) {
+        // If already in MiniMessage format, return as-is
+        if (input.startsWith("<") && input.endsWith(">")) {
+            return input;
         }
         
-        return "<color:#" + hex.toUpperCase() + ">";
+        // Clean hex input
+        String hex = input.replace("&#", "").replace("#", "");
+        
+        // If it's a 6-character hex code
+        if (hex.matches("[A-Fa-f0-9]{6}")) {
+            return "<color:#" + hex.toUpperCase() + ">";
+        }
+        
+        // Default to white
+        return "<white>";
+    }
+
+    /**
+     * Wraps text in MiniMessage bold tags
+    */
+    public static String bold(String text) {
+        return "<bold>" + text + "</bold>";
+    }
+
+    /**
+     * Creates a complete MiniMessage color format
+     * @param color The color tag (e.g., "<red>" or "<color:#FF0000>")
+     * @param text The text to color
+     * @param bold Whether to make it bold
+     * @return Complete MiniMessage string
+     */
+    public static String miniMessage(String color, String text, boolean bold) {
+        if (bold) {
+            return color + "<bold>" + text + "</bold>" + color.replace("<", "</");
+        } else {
+            return color + text + color.replace("<", "</");
+        }
     }
     
     /**

@@ -1,7 +1,6 @@
 package com.yourserver.playercustomisation.commands;
 
 import com.yourserver.playercustomisation.PlayerCustomisation;
-import com.yourserver.playercustomisation.gui.MenuUtils;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;

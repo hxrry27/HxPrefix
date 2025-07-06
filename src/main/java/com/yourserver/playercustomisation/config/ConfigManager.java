@@ -2,6 +2,8 @@ package com.yourserver.playercustomisation.config;
 
 import com.yourserver.playercustomisation.PlayerCustomisation;
 import com.yourserver.playercustomisation.gui.MenuUtils;
+
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -36,6 +38,25 @@ public class ConfigManager {
     public ConfigManager(PlayerCustomisation plugin) {
         this.plugin = plugin;
         loadAllConfigs();
+    }
+
+    public static class PrefixOption {
+        public final String name;
+        public final String value;
+        public final List<String> ranks;
+        public final Material material;
+        public final boolean glow;
+        public final String conditional;
+        
+        public PrefixOption(String name, String value, List<String> ranks, 
+                        Material material, boolean glow, String conditional) {
+            this.name = name;
+            this.value = value;
+            this.ranks = ranks;
+            this.material = material;
+            this.glow = glow;
+            this.conditional = conditional;
+        }
     }
     
     /**
@@ -108,6 +129,8 @@ public class ConfigManager {
         }
     }
     
+    private final List<PrefixOption> prefixOptions = new ArrayList<>();
+
     private void loadPrefixConfig() {
         File file = new File(plugin.getDataFolder(), "prefix.yml");
         if (!file.exists()) {
@@ -115,7 +138,41 @@ public class ConfigManager {
         }
         
         prefixConfig = YamlConfiguration.loadConfiguration(file);
-        prefixes.addAll(prefixConfig.getStringList("prefixes"));
+        prefixOptions.clear();
+        
+        // Load all prefix categories
+        loadPrefixCategory("prefixes.supporter-prefixes");
+        loadPrefixCategory("prefixes.patron-prefixes");
+        loadPrefixCategory("prefixes.devoted-prefixes");
+        loadPrefixCategory("prefixes.special-prefixes");
+        loadPrefixCategory("prefixes.event-prefixes");
+        loadPrefixCategory("prefixes.generic-prefixes");
+    }
+
+    private void loadPrefixCategory(String path) {
+        ConfigurationSection section = prefixConfig.getConfigurationSection(path);
+        if (section == null) return;
+        
+        for (String key : section.getKeys(false)) {
+            ConfigurationSection prefixSection = section.getConfigurationSection(key);
+            if (prefixSection == null) continue;
+            
+            String name = prefixSection.getString("name");
+            String value = prefixSection.getString("value");
+            List<String> ranks = prefixSection.getStringList("ranks");
+            String materialName = prefixSection.getString("material", "NAME_TAG");
+            boolean glow = prefixSection.getBoolean("glow", false);
+            String conditional = prefixSection.getString("conditional", null);
+            
+            Material material;
+            try {
+                material = Material.valueOf(materialName);
+            } catch (IllegalArgumentException e) {
+                material = Material.NAME_TAG;
+            }
+            
+            prefixOptions.add(new PrefixOption(name, value, ranks, material, glow, conditional));
+        }
     }
     
     private void loadSuffixConfig() {
@@ -273,25 +330,20 @@ public class ConfigManager {
     
     // Get available options for a rank
     
-    public List<String> getAvailablePrefixes(String rank) {
-        RankSettings settings = ranks.get(rank.toLowerCase());
-        if (settings == null || !settings.prefix) {
-            return Collections.emptyList();
-        }
+    public List<PrefixOption> getAvailablePrefixOptions(String rank) {
+        List<PrefixOption> available = new ArrayList<>();
         
-        // Check whitelist
-        if (settings.prefixWhitelist != null && !settings.prefixWhitelist.isEmpty()) {
-            List<String> available = new ArrayList<>();
-            for (String prefix : prefixes) {
-                if (settings.prefixWhitelist.contains(prefix)) {
-                    available.add(prefix);
+        for (PrefixOption option : prefixOptions) {
+            // Check if this rank can use this prefix
+            if (option.ranks.contains(rank.toLowerCase())) {
+                // Check conditional (for future implementation)
+                if (option.conditional == null || checkCondition(option.conditional)) {
+                    available.add(option);
                 }
             }
-            return available;
         }
         
-        // No whitelist = all prefixes
-        return new ArrayList<>(prefixes);
+        return available;
     }
     
     public List<String> getAvailableSuffixes(String rank) {
@@ -322,30 +374,24 @@ public class ConfigManager {
         String message = mainConfig.getString(path);
         
         if (message == null) {
-            // Default messages
-            switch (key) {
-                case "prefix":
-                    return "&8[&bCustom&8] ";
-                case "no-permission":
-                    return "{prefix}&cYou don't have permission!";
-                case "no-permission-rank":
-                    return "{prefix}&cYour rank ({rank}) doesn't have access to this feature!";
-                case "color-changed":
-                    return "{prefix}&aColor changed!";
-                case "prefix-changed":
-                    return "{prefix}&aPrefix set!";
-                case "suffix-changed":
-                    return "{prefix}&aSuffix set!";
-                default:
-                    return "&cMissing message: " + key;
-            }
+            // Return a default message
+            return MenuUtils.colorize("&8[&bCustom&8] &cMissing message: " + key);
         }
         
-        // Replace prefix placeholder
-        String prefix = getMessage("prefix");
-        message = message.replace("{prefix}", prefix);
-        
+        // Handle prefix replacement without recursion
+        if (message.contains("{prefix}")) {
+            // Get prefix directly from config, not through getMessage
+            String prefix = mainConfig.getString("messages.prefix", "&8[&bCustom&8] ");
+            message = message.replace("{prefix}", prefix);
+        }
+    
         return MenuUtils.colorize(message);
+    }
+
+    private boolean checkCondition(String condition) {
+        // For now, always return true
+        // Later: check dates, permissions, etc.
+        return true;
     }
     
     // Inner class for rank settings
