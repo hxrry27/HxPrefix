@@ -16,6 +16,10 @@ commands:
     description: Opens prefix selection GUI  
     usage: /<command>
     permission: playercustomisation.prefix
+  suffix:
+    description: Opens suffix selection GUI
+    usage: /<command>
+    aliases: [suffixes]
   nick:
     description: Sets or removes nickname
     usage: /<command> <nickname|off>

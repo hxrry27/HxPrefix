@@ -1,20 +1,18 @@
 package com.yourserver.playercustomisation.commands;
 
 import com.yourserver.playercustomisation.PlayerCustomisation;
-import com.yourserver.playercustomisation.gui.MenuUtils;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
- * Updated ColorCommand that uses the internal GUI system
- * No longer depends on DeluxeMenus
+ * New command for suffix selection
  */
-public class ColorCommand implements CommandExecutor {
+public class SuffixCommand implements CommandExecutor {
     private final PlayerCustomisation plugin;
 
-    public ColorCommand(PlayerCustomisation plugin) {
+    public SuffixCommand(PlayerCustomisation plugin) {
         this.plugin = plugin;
     }
 
@@ -25,8 +23,8 @@ public class ColorCommand implements CommandExecutor {
             return true;
         }
 
-        // Open the color selection menu using our GUI system
-        plugin.getMenuManager().openColorMenu(player);
+        // Open the suffix selection menu using our GUI system
+        plugin.getMenuManager().openSuffixMenu(player);
         
         return true;
     }

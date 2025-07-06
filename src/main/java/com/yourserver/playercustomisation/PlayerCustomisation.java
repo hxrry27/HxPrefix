@@ -8,6 +8,7 @@ import com.yourserver.playercustomisation.placeholders.CustomisationExpansion;
 import com.yourserver.playercustomisation.utils.PermissionUtils;
 import com.yourserver.playercustomisation.gui.MenuManager;
 import com.yourserver.playercustomisation.config.ConfigManager;
+import com.yourserver.playercustomisation.commands.SuffixCommand;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -89,12 +90,11 @@ public class PlayerCustomisation extends JavaPlugin implements CommandExecutor {
     private void registerCommands() {
         getCommand("color").setExecutor(new ColorCommand(this));
         getCommand("prefix").setExecutor(new PrefixCommand(this));
+        getCommand("suffix").setExecutor(new SuffixCommand(this));  // ← ADD THIS
         getCommand("nick").setExecutor(new NickCommand(this));
         getCommand("requesttag").setExecutor(new RequestTagCommand(this));
         getCommand("managetags").setExecutor(new ManageTagsCommand(this));
         getCommand("pcreload").setExecutor(this);
-        
-        // Internal command for GUI interactions
         getCommand("pc-internal").setExecutor(new InternalCommand(this));
     }
 

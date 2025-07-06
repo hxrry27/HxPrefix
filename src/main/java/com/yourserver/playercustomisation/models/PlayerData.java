@@ -9,6 +9,7 @@ public class PlayerData {
     private String nameColor;
     private String prefixStyle;
     private String customPrefix;
+    private String suffix;
 
     public PlayerData(UUID uuid, String username) {
         this.uuid = uuid;
@@ -22,6 +23,7 @@ public class PlayerData {
     public String getNameColor() { return nameColor; }
     public String getPrefixStyle() { return prefixStyle; }
     public String getCustomPrefix() { return customPrefix; }
+    public String getSuffix() { return suffix; }
 
     // Setters
     public void setUsername(String username) { this.username = username; }
@@ -29,6 +31,7 @@ public class PlayerData {
     public void setNameColor(String nameColor) { this.nameColor = nameColor; }
     public void setPrefixStyle(String prefixStyle) { this.prefixStyle = prefixStyle; }
     public void setCustomPrefix(String customPrefix) { this.customPrefix = customPrefix; }
+    public void setSuffix(String suffix) { this.suffix = suffix; }
 
     // Utility methods
     public String getDisplayName() {

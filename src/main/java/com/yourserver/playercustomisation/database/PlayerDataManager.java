@@ -51,6 +51,7 @@ public class PlayerDataManager {
                             data.setNameColor(rs.getString("name_color"));
                             data.setPrefixStyle(rs.getString("prefix_style"));
                             data.setCustomPrefix(rs.getString("custom_prefix"));
+                            data.setSuffix(rs.getString("suffix"));
                         } else {
                             // Player doesn't exist in database yet
                             return null;
@@ -74,14 +75,15 @@ public class PlayerDataManager {
         return CompletableFuture.runAsync(() -> {
             try (Connection connection = mysql.getConnection()) {
                 String sql = """
-                    INSERT INTO player_data (uuid, username, nickname, name_color, prefix_style, custom_prefix)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO player_data (uuid, username, nickname, name_color, prefix_style, custom_prefix, suffix)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                     ON DUPLICATE KEY UPDATE
                     username = VALUES(username),
                     nickname = VALUES(nickname),
                     name_color = VALUES(name_color),
                     prefix_style = VALUES(prefix_style),
-                    custom_prefix = VALUES(custom_prefix)
+                    custom_prefix = VALUES(custom_prefix),
+                    suffix = VALUES(suffix)
                     """;
                 
                 try (PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -91,6 +93,7 @@ public class PlayerDataManager {
                     stmt.setString(4, data.getNameColor());
                     stmt.setString(5, data.getPrefixStyle());
                     stmt.setString(6, data.getCustomPrefix());
+                    stmt.setString(7, data.getSuffix());
                     stmt.executeUpdate();
                 }
                 
