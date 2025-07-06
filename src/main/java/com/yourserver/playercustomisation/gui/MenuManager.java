@@ -52,12 +52,19 @@ public class MenuManager implements Listener {
     public void openPrefixMenu(Player player) {
         String rank = PermissionUtils.getPlayerRank(player);
         
+        // Debug logging
+        plugin.getLogger().info("Opening prefix menu for player: " + player.getName());
+        plugin.getLogger().info("Player rank: " + rank);
+        
         // Check if they can use prefixes
         if (!plugin.getConfigManager().canUsePrefix(rank)) {
-            player.sendMessage(plugin.getConfigManager().getMessage("no-permission-rank")
+            plugin.getLogger().info("Rank " + rank + " cannot use prefixes");
+            player.sendMessage(plugin.getConfigManager().getMessage("permissions.no-permission-rank")
                 .replace("{rank}", rank));
             return;
         }
+        
+        plugin.getLogger().info("Rank " + rank + " can use prefixes, opening menu...");
         
         PrefixSelectionMenu menu = new PrefixSelectionMenu(plugin, player, rank);
         openMenu(player, menu);

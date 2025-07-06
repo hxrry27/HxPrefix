@@ -169,14 +169,95 @@ public class ConfigManager {
         
         prefixConfig = YamlConfiguration.loadConfiguration(file);
         prefixOptions.clear();
+        prefixTypes.clear();
+        styleCategories.clear();
+        rankPrefixAccess.clear();
         
-        // Load all prefix categories
-        loadPrefixCategory("prefixes.supporter-prefixes");
-        loadPrefixCategory("prefixes.patron-prefixes");
-        loadPrefixCategory("prefixes.devoted-prefixes");
-        loadPrefixCategory("prefixes.special-prefixes");
-        loadPrefixCategory("prefixes.event-prefixes");
-        loadPrefixCategory("prefixes.generic-prefixes");
+        // Get defaults
+        String defaultMaterial = prefixConfig.getString("defaults.material", "NAME_TAG");
+        boolean defaultGlow = prefixConfig.getBoolean("defaults.glow", false);
+        
+        // 1. Load prefix types (base words)
+        prefixTypes = prefixConfig.getStringList("prefix-types");
+        plugin.getLogger().info("Loaded " + prefixTypes.size() + " prefix types");
+        
+        // 2. Load style categories
+        ConfigurationSection styleCategoriesSection = prefixConfig.getConfigurationSection("style-categories");
+        if (styleCategoriesSection != null) {
+            for (String categoryName : styleCategoriesSection.getKeys(false)) {
+                List<StyleOption> styles = loadStyleCategory(categoryName, styleCategoriesSection.getConfigurationSection(categoryName), defaultMaterial, defaultGlow);
+                styleCategories.put(categoryName, styles);
+                plugin.getLogger().info("Loaded category '" + categoryName + "' with " + styles.size() + " styles");
+            }
+        }
+        
+        // 3. Load rank access rules
+        ConfigurationSection rankAccessSection = prefixConfig.getConfigurationSection("rank-access");
+        if (rankAccessSection != null) {
+            for (String rank : rankAccessSection.getKeys(false)) {
+                ConfigurationSection rankSection = rankAccessSection.getConfigurationSection(rank);
+                List<String> prefixes = rankSection.getStringList("prefixes");
+                List<String> categories = rankSection.getStringList("categories");
+                boolean customTags = rankSection.getBoolean("custom-tags", false);
+                
+                rankPrefixAccess.put(rank.toLowerCase(), new RankPrefixAccess(prefixes, categories, customTags));
+            }
+        }
+        
+        // 4. Generate auto combinations
+        generateAutoCombinations();
+        
+        // 5. Load specific prefixes (these are added on top)
+        loadSpecificPrefixes(defaultMaterial, defaultGlow);
+        
+        plugin.getLogger().info("Total prefix options: " + prefixOptions.size());
+    }
+
+    private void generateAutoCombinations() {
+        // For each rank
+        for (Map.Entry<String, RankPrefixAccess> entry : rankPrefixAccess.entrySet()) {
+            String rank = entry.getKey();
+            RankPrefixAccess access = entry.getValue();
+            
+            // For each prefix this rank can use
+            for (String prefixType : access.prefixes) {
+                // For each category this rank can access
+                for (String categoryName : access.categories) {
+                    List<StyleOption> styles = styleCategories.get(categoryName);
+                    if (styles == null) continue;
+                    
+                    // For each style in this category
+                    for (StyleOption style : styles) {
+                        // Generate the combination
+                        String formattedValue = style.format.replace("{PREFIX}", prefixType);
+                        String displayName = prefixType + " " + style.name;
+                        
+                        // Check if this combination already exists
+                        PrefixOption existing = findExistingOption(displayName);
+                        if (existing != null) {
+                            // Add this rank to the existing option
+                            if (!existing.ranks.contains(rank)) {
+                                existing.ranks.add(rank);
+                            }
+                        } else {
+                            // Create new option
+                            List<String> ranks = new ArrayList<>();
+                            ranks.add(rank);
+                            
+                            PrefixOption option = new PrefixOption(
+                                displayName, 
+                                formattedValue, 
+                                ranks, 
+                                style.material, 
+                                style.glow, 
+                                style.conditional
+                            );
+                            prefixOptions.add(option);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private void loadPrefixCategory(String path) {
@@ -214,42 +295,75 @@ public class ConfigManager {
         suffixConfig = YamlConfiguration.loadConfiguration(file);
         suffixOptions.clear();
         
-        // Load suffix options with full configuration
-        ConfigurationSection suffixesSection = suffixConfig.getConfigurationSection("suffixes");
-        if (suffixesSection != null) {
-            for (String key : suffixesSection.getKeys(false)) {
-                ConfigurationSection suffixSection = suffixesSection.getConfigurationSection(key);
-                if (suffixSection == null) continue;
+        // Get default material from config
+        String defaultMaterialName = suffixConfig.getString("defaults.material", "PAPER");
+        
+        if (defaultMaterialName == null) {
+            plugin.getLogger().warning("No default material specified in suffix.yml");
+            return;
+        }
+        
+        // Load suffix options - they are a LIST
+        List<Map<?, ?>> suffixList = suffixConfig.getMapList("suffixes");
+        
+        if (suffixList == null || suffixList.isEmpty()) {
+            plugin.getLogger().warning("No suffixes found in suffix.yml");
+            return;
+        }
+        
+        for (Map<?, ?> suffixMap : suffixList) {
+            try {
+                String value = (String) suffixMap.get("value");
+                String materialName = (String) suffixMap.getOrDefault("material", defaultMaterialName);
+                String color = (String) suffixMap.getOrDefault("color", "&f&l");
+                boolean glow = (Boolean) suffixMap.getOrDefault("glow", false);
                 
-                String value = suffixSection.getString("value");
-                String materialName = suffixSection.getString("material", "PAPER");
-                String color = suffixSection.getString("color", "&f&l");
-                boolean glow = suffixSection.getBoolean("glow", false);
-                List<String> ranks = suffixSection.getStringList("ranks");
+                @SuppressWarnings("unchecked")
+                List<String> ranks = (List<String>) suffixMap.get("ranks");
+                
+                if (value == null || ranks == null) {
+                    plugin.getLogger().warning("Invalid suffix entry - missing required fields");
+                    continue;
+                }
                 
                 Material material;
                 try {
-                    material = Material.valueOf(materialName);
+                    material = Material.valueOf(materialName.toUpperCase());
                 } catch (IllegalArgumentException e) {
-                    material = Material.PAPER;
+                    plugin.getLogger().warning("Invalid material " + materialName + " for suffix " + value);
+                    material = Material.valueOf(defaultMaterialName);
                 }
                 
                 suffixOptions.add(new SuffixOption(value, material, color, glow, ranks));
+                plugin.getLogger().info("Loaded suffix: " + value + " for ranks: " + ranks);
+            } catch (Exception e) {
+                plugin.getLogger().warning("Error loading suffix: " + e.getMessage());
             }
         }
+        
+        plugin.getLogger().info("Loaded " + suffixOptions.size() + " suffix options");
     }
 
     public List<SuffixOption> getAvailableSuffixOptions(String rank) {
         RankSettings settings = ranks.get(rank.toLowerCase());
         if (settings == null || !settings.suffix) {
+            plugin.getLogger().info("Rank " + rank + " has no suffix access");
             return Collections.emptyList();
         }
         
         List<SuffixOption> available = new ArrayList<>();
         
         for (SuffixOption option : suffixOptions) {
-            // Check if this rank can use this suffix
-            if (option.ranks.contains(rank.toLowerCase())) {
+            // Check if this rank can use this suffix (case-insensitive)
+            boolean canUse = false;
+            for (String allowedRank : option.ranks) {
+                if (allowedRank.equalsIgnoreCase(rank)) {
+                    canUse = true;
+                    break;
+                }
+            }
+            
+            if (canUse) {
                 available.add(option);
             }
         }
@@ -405,16 +519,28 @@ public class ConfigManager {
     public List<PrefixOption> getAvailablePrefixOptions(String rank) {
         List<PrefixOption> available = new ArrayList<>();
         
+        plugin.getLogger().info("Getting available prefixes for rank: " + rank);
+        
         for (PrefixOption option : prefixOptions) {
-            // Check if this rank can use this prefix
-            if (option.ranks.contains(rank.toLowerCase())) {
+            // Check if this rank can use this prefix (case-insensitive)
+            boolean canUse = false;
+            for (String allowedRank : option.ranks) {
+                if (allowedRank.equalsIgnoreCase(rank)) {
+                    canUse = true;
+                    break;
+                }
+            }
+            
+            if (canUse) {
                 // Check conditional (for future implementation)
                 if (option.conditional == null || checkCondition(option.conditional)) {
                     available.add(option);
+                    plugin.getLogger().info("  - " + option.name + " is available");
                 }
             }
         }
         
+        plugin.getLogger().info("Total available prefixes: " + available.size());
         return available;
     }
     

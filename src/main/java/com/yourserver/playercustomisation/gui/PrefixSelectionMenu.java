@@ -68,11 +68,18 @@ public class PrefixSelectionMenu extends AbstractMenu {
         // Get available prefix options for this rank
         List<ConfigManager.PrefixOption> availableOptions = plugin.getConfigManager().getAvailablePrefixOptions(rank);
         
+        // Debug logging
+        plugin.getLogger().info("Building prefix menu for rank: " + rank);
+        plugin.getLogger().info("Found " + availableOptions.size() + " available prefix options");
+        
         // Display prefixes in a grid, automatically finding empty slots
         int slot = 0;
         int addedCount = 0;
         
         for (ConfigManager.PrefixOption option : availableOptions) {
+            // Debug log each option
+            plugin.getLogger().info("Adding prefix option: " + option.name + " in slot " + slot);
+            
             // Find next available slot
             while (slot < inventory.getSize()) {
                 // Skip special slots
@@ -98,6 +105,8 @@ public class PrefixSelectionMenu extends AbstractMenu {
                 break;
             }
         }
+        
+        plugin.getLogger().info("Added " + addedCount + " prefix options to the menu");
         
         // Add custom tag info for ranks that support it
         if (canUseCustomTags()) {

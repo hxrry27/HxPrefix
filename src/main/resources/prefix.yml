@@ -1,39 +1,228 @@
-# Prefix Options
-# These are the actual text options players can choose
-# The plugin will handle the coloring based on their rank
+# Prefix Options Configuration - Clean Implementation
 
-prefixes:
-  # Basic ranks
-  - "PLAYER"
-  - "MEMBER"
-  - "USER"
+# Default values if not specified
+defaults:
+  material: NAME_TAG
+  glow: false
+
+# Auto-generated combinations section
+# ====================================
+
+# Base prefix texts (just the words, no formatting)
+prefix-types:
+  - PLAYER
+  - MEMBER
+  - VIP
+  - VIP+
+  - MVP
+  - MVP+
+  - SUPPORTER
+  - PATRON
+  - DEVOTED
+  - LEGEND
+  - TITAN
+
+# Style categories (define your color/gradient groups)
+style-categories:
+  # Basic solid colors
+  basic:
+    - name: "Red"
+      format: "<red><bold>{PREFIX}</bold></red>"
+      material: RED_CONCRETE
+    - name: "Blue"
+      format: "<blue><bold>{PREFIX}</bold></blue>"
+      material: BLUE_CONCRETE
+    - name: "Green"
+      format: "<green><bold>{PREFIX}</bold></green>"
+      material: GREEN_CONCRETE
+    - name: "Gold"
+      format: "<gold><bold>{PREFIX}</bold></gold>"
+      material: GOLD_NUGGET
+    - name: "Aqua"
+      format: "<aqua><bold>{PREFIX}</bold></aqua>"
+      material: CYAN_DYE
+    - name: "Pink"
+      format: "<light_purple><bold>{PREFIX}</bold></light_purple>"
+      material: PINK_DYE
+    - name: "White"
+      format: "<white><bold>{PREFIX}</bold></white>"
+      material: WHITE_DYE
+    - name: "Gray"
+      format: "<gray><bold>{PREFIX}</bold></gray>"
+      material: GRAY_DYE
+      
+  # Gradient styles
+  gradients:
+    - name: "Fire"
+      format: "<gradient:#ff0000:#ffff00><bold>{PREFIX}</bold></gradient>"
+      material: BLAZE_POWDER
+      glow: true
+    - name: "Ocean"
+      format: "<gradient:#0080ff:#00ffff><bold>{PREFIX}</bold></gradient>"
+      material: PRISMARINE_CRYSTALS
+      glow: true
+    - name: "Nature"
+      format: "<gradient:#00ff00:#ffff00><bold>{PREFIX}</bold></gradient>"
+      material: EMERALD
+      glow: true
+    - name: "Sunset"
+      format: "<gradient:#ff6b35:#f7931e:#fdc830><bold>{PREFIX}</bold></gradient>"
+      material: ORANGE_DYE
+      glow: true
+    - name: "Galaxy"
+      format: "<gradient:#ff00ff:#00ffff><bold>{PREFIX}</bold></gradient>"
+      material: ENDER_EYE
+      glow: true
+      
+  # Special effects
+  special:
+    - name: "Rainbow"
+      format: "<rainbow><bold>{PREFIX}</bold></rainbow>"
+      material: NETHER_STAR
+      glow: true
+    - name: "Italic Gold"
+      format: "<gold><bold><italic>{PREFIX}</italic></bold></gold>"
+      material: GOLD_INGOT
+      glow: true
+    - name: "Underlined Blue"
+      format: "<blue><bold><underlined>{PREFIX}</underlined></bold></blue>"
+      material: DIAMOND
+      glow: true
+
+# Rank access configuration
+# =========================
+rank-access:
+  default:
+    prefixes: ["PLAYER", "MEMBER"]
+    categories: ["basic"]
+    
+  vip:
+    prefixes: ["PLAYER", "MEMBER", "VIP"]
+    categories: ["basic"]
+    
+  vip+:
+    prefixes: ["PLAYER", "MEMBER", "VIP", "VIP+"]
+    categories: ["basic", "gradients"]
+    
+  mvp:
+    prefixes: ["PLAYER", "MEMBER", "VIP", "MVP"]
+    categories: ["basic", "gradients"]
+    
+  mvp+:
+    prefixes: ["PLAYER", "MEMBER", "VIP", "MVP", "MVP+"]
+    categories: ["basic", "gradients", "special"]
+    
+  supporter:
+    prefixes: ["PLAYER", "MEMBER", "SUPPORTER"]
+    categories: ["basic"]
+    
+  patron:
+    prefixes: ["PLAYER", "MEMBER", "SUPPORTER", "PATRON"]
+    categories: ["basic", "gradients"]
+    
+  devoted:
+    prefixes: ["PLAYER", "MEMBER", "SUPPORTER", "PATRON", "DEVOTED"]
+    categories: ["basic", "gradients", "special"]
+    custom-tags: true
+    
+  legend:
+    prefixes: ["PLAYER", "MEMBER", "SUPPORTER", "PATRON", "DEVOTED", "LEGEND", "TITAN"]
+    categories: ["basic", "gradients", "special"]
+    custom-tags: true
+
+# Specific/Special Prefixes
+# ========================
+# These are exact combinations that don't follow auto-generation
+
+specific-prefixes:
+  # Christmas seasonal prefix
+  - name: "CHRISTMAS"
+    value: "<gradient:#ff0000:#ffffff:#00ff00><bold>CHRISTMAS</bold></gradient> <white>❄</white>"
+    material: SNOWBALL
+    glow: true
+    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend"]
+    conditional: "christmas_event"
+    
+  # Halloween seasonal prefix
+  - name: "SPOOKY"
+    value: "<gradient:#ff6600:#000000:#ff6600><bold>SPOOKY</bold></gradient> <gold>🎃</gold>"
+    material: JACK_O_LANTERN
+    glow: true
+    ranks: ["supporter", "patron", "devoted", "legend"]
+    conditional: "halloween_event"
+    
+  # Special achievement prefix
+  - name: "2024 CHAMPION"
+    value: "<gradient:#FFD700:#FFFFFF:#FFD700><bold>2024 CHAMPION</bold></gradient> <yellow>🏆</yellow>"
+    material: GOLDEN_HELMET
+    glow: true
+    ranks: ["champion2024"]  # Special rank for winners
+    
+  # Best friend special prefix
+  - name: "BEST FRIEND"
+    value: "<gradient:#ff00ff:#00ffff:#ffff00><bold>BEST FRIEND</bold></gradient> <light_purple>♥</light_purple>"
+    material: NETHER_STAR
+    glow: true
+    ranks: ["bestfriend"]  # Custom rank
+    
+  # Staff prefixes
+  - name: "HELPER"
+    value: "<green><bold>HELPER</bold></green> <dark_green>✦</dark_green>"
+    material: EMERALD
+    glow: true
+    ranks: ["helper"]
+    
+  - name: "MOD"
+    value: "<dark_aqua><bold>MOD</bold></dark_aqua> <aqua>⚡</aqua>"
+    material: DIAMOND_SWORD
+    glow: true
+    ranks: ["mod"]
+    
+  - name: "ADMIN"
+    value: "<dark_red><bold>ADMIN</bold></dark_red> <red>✦</red>"
+    material: REDSTONE_BLOCK
+    glow: true
+    ranks: ["admin"]
+    
+  - name: "OWNER"
+    value: "<gradient:#FFD700:#FFFFFF:#FFD700><bold>OWNER</bold></gradient> <yellow>★</yellow>"
+    material: BEDROCK
+    glow: true
+    ranks: ["owner"]
+
+# Menu Configuration
+# ==================
+menu:
+  title: "&d&lPrefix Selection &7({rank})"
+  size: 54
   
-  # VIP tiers
-  - "VIP"
-  - "VIP+"
-  - "ELITE"
-  - "ELITE+"
+  # Show specific prefixes first
+  specific-first: true
   
-  # Premium tiers  
-  - "PREMIUM"
-  - "DELUXE"
-  - "ULTIMATE"
-  - "LEGENDARY"
+  # Group by: "prefix" or "style"
+  group-by: "prefix"
   
-  # Themed prefixes
-  - "HERO"
-  - "CHAMPION"
-  - "WARRIOR"
-  - "KNIGHT"
-  
-  # Fun prefixes
-  - "PRO"
-  - "EPIC"
-  - "MEGA"
-  - "ULTRA"
-  
-  # Supporter tags
-  - "SUPPORTER"
-  - "PATRON"
-  - "SPONSOR"
-  - "DONOR"
+  special-slots:
+    custom-tag-info: 49
+    reset-button: 53
+    
+  custom-tag-info:
+    material: WRITABLE_BOOK
+    name: "&e&lCustom Tags"
+    lore:
+      - "&7Want a unique prefix?"
+      - "&7Use &f/requesttag <name>"
+      - ""
+      - "&eClick for info!"
+    
+  reset-button:
+    material: BARRIER
+    name: "&c&lReset Prefix"
+    lore:
+      - "&7Remove your prefix"
+      - ""
+      - "&cClick to reset!"
+    
+  filler:
+    material: GRAY_STAINED_GLASS_PANE
+    name: " "
