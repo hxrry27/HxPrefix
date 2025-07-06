@@ -19,6 +19,12 @@ public class MySQL {
 
     public boolean connect() {
         try {
+            plugin.getLogger().info("Starting MySQL connection...");
+            plugin.getLogger().info("Host: " + plugin.getConfig().getString("mysql.host"));
+            plugin.getLogger().info("Port: " + plugin.getConfig().getInt("mysql.port"));
+            plugin.getLogger().info("Database: " + plugin.getConfig().getString("mysql.database"));
+            plugin.getLogger().info("Username: " + plugin.getConfig().getString("mysql.username"));
+            
             HikariConfig config = new HikariConfig();
             
             String host = plugin.getConfig().getString("mysql.host");
@@ -28,7 +34,11 @@ public class MySQL {
             String password = plugin.getConfig().getString("mysql.password");
             int poolSize = plugin.getConfig().getInt("mysql.pool-size", 10);
             
-            config.setJdbcUrl("jdbc:mysql://" + host + ":" + port + "/" + database);
+            // Try a direct connection first to debug
+            String jdbcUrl = "jdbc:mysql://" + host + ":" + port + "/" + database;
+            plugin.getLogger().info("JDBC URL: " + jdbcUrl);
+            
+            config.setJdbcUrl(jdbcUrl);
             config.setUsername(username);
             config.setPassword(password);
             config.setMaximumPoolSize(poolSize);
@@ -46,9 +56,14 @@ public class MySQL {
             config.addDataSourceProperty("prepStmtCacheSize", "250");
             config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
             
+            // Add connection test query
+            config.setConnectionTestQuery("SELECT 1");
+            
+            plugin.getLogger().info("Creating HikariDataSource...");
             dataSource = new HikariDataSource(config);
             
             // Test connection
+            plugin.getLogger().info("Testing connection...");
             try (Connection connection = dataSource.getConnection()) {
                 plugin.getLogger().info("Successfully connected to MySQL database!");
             }
@@ -59,6 +74,10 @@ public class MySQL {
             return true;
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to connect to MySQL database!", e);
+            plugin.getLogger().severe("Full error: " + e.getMessage());
+            if (e.getCause() != null) {
+                plugin.getLogger().severe("Cause: " + e.getCause().getMessage());
+            }
             return false;
         }
     }
