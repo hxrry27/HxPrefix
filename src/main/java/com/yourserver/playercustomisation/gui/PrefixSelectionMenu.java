@@ -5,28 +5,62 @@ import com.yourserver.playercustomisation.config.ConfigManager;
 import com.yourserver.playercustomisation.models.PlayerData;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
 
 /**
  * Menu for selecting prefixes
  * Adapts based on player rank and shows appropriate options
+ * All configuration is loaded from prefix.yml
  */
 public class PrefixSelectionMenu extends AbstractMenu {
-    private static final int RESET_SLOT = 49;
-    private static final int CUSTOM_TAG_INFO_SLOT = 43;
+    // Configuration-loaded slot positions
+    private int resetSlot = 49;
+    private int customTagInfoSlot = 43;
     
     // Store player's current color for preview
     private String playerColor = null;
     
     public PrefixSelectionMenu(PlayerCustomisation plugin, Player player, String rank) {
-        super(plugin, player, rank, "&d&lPrefix Selection &7(" + rank + ")", 54);
+        super(plugin, player, rank, getMenuTitle(plugin, rank), getMenuSize(plugin));
+        
+        // Load slot positions from config
+        loadSlotPositions();
         
         // Get player's current color for preview
         loadPlayerColor();
+    }
+    
+    private static String getMenuTitle(PlayerCustomisation plugin, String rank) {
+        ConfigurationSection menuConfig = plugin.getConfigManager().getPrefixMenuConfig()
+            .getConfigurationSection("menu");
+        String titleFormat = menuConfig != null ? 
+            menuConfig.getString("title", "&d&lPrefix Selection &7({rank})") : 
+            "&d&lPrefix Selection &7({rank})";
+        return titleFormat.replace("{rank}", rank);
+    }
+    
+    private static int getMenuSize(PlayerCustomisation plugin) {
+        ConfigurationSection menuConfig = plugin.getConfigManager().getPrefixMenuConfig()
+            .getConfigurationSection("menu");
+        return menuConfig != null ? menuConfig.getInt("size", 54) : 54;
+    }
+    
+    private void loadSlotPositions() {
+        ConfigurationSection prefixConfig = plugin.getConfigManager().getPrefixMenuConfig();
+        ConfigurationSection menuConfig = prefixConfig.getConfigurationSection("menu");
+        
+        if (menuConfig != null) {
+            // Load special slots
+            ConfigurationSection specialSlots = menuConfig.getConfigurationSection("special-slots");
+            if (specialSlots != null) {
+                resetSlot = specialSlots.getInt("reset-button", 49);
+                customTagInfoSlot = specialSlots.getInt("custom-tag-info", 43);
+            }
+        }
     }
     
     @Override
@@ -34,16 +68,35 @@ public class PrefixSelectionMenu extends AbstractMenu {
         // Get available prefix options for this rank
         List<ConfigManager.PrefixOption> availableOptions = plugin.getConfigManager().getAvailablePrefixOptions(rank);
         
-        // Display prefixes in a grid
+        // Display prefixes in a grid, automatically finding empty slots
         int slot = 0;
+        int addedCount = 0;
+        
         for (ConfigManager.PrefixOption option : availableOptions) {
-            if (slot >= 45) break; // Leave bottom row for special items
+            // Find next available slot
+            while (slot < inventory.getSize()) {
+                // Skip special slots
+                if (slot == resetSlot || (slot == customTagInfoSlot && canUseCustomTags())) {
+                    slot++;
+                    continue;
+                }
+                
+                // Skip bottom row (reserved for special items)
+                if (slot >= inventory.getSize() - 9) {
+                    break;
+                }
+                
+                // Use this slot
+                addPrefixOption(slot, option);
+                slot++;
+                addedCount++;
+                break;
+            }
             
-            // Skip slot for custom tag info if needed
-            if (slot == CUSTOM_TAG_INFO_SLOT && canUseCustomTags()) slot++;
-            
-            addPrefixOption(slot, option);
-            slot++;
+            // Stop if we've filled all available slots
+            if (slot >= inventory.getSize() - 9) {
+                break;
+            }
         }
         
         // Add custom tag info for ranks that support it
@@ -52,12 +105,10 @@ public class PrefixSelectionMenu extends AbstractMenu {
         }
         
         // Add reset button
-        setItem(RESET_SLOT, createResetButton("Prefix"), (Runnable) () -> {
-            resetPrefix();
-        });
+        addResetButton();
         
-        // Fill empty slots
-        fillEmpty();
+        // Fill empty slots with configured filler
+        fillEmptyWithConfiguredFiller();
     }
     
     private void addPrefixOption(int slot, ConfigManager.PrefixOption option) {
@@ -84,6 +135,25 @@ public class PrefixSelectionMenu extends AbstractMenu {
     }
     
     private void addCustomTagInfo() {
+        // Get material from config
+        ConfigurationSection menuConfig = plugin.getConfigManager().getPrefixMenuConfig()
+            .getConfigurationSection("menu");
+        Material material = Material.WRITABLE_BOOK;
+        
+        if (menuConfig != null) {
+            ConfigurationSection customTagSection = menuConfig.getConfigurationSection("custom-tag-info");
+            if (customTagSection != null) {
+                String materialName = customTagSection.getString("material");
+                if (materialName != null) {
+                    try {
+                        material = Material.valueOf(materialName.toUpperCase());
+                    } catch (IllegalArgumentException e) {
+                        plugin.getLogger().warning("Invalid material for custom tag info: " + materialName);
+                    }
+                }
+            }
+        }
+        
         List<String> lore = Arrays.asList(
             "&7Want a custom prefix like &b[LEGEND]&7?",
             "&7Use &f/requesttag <name> &7to request one!",
@@ -93,12 +163,40 @@ public class PrefixSelectionMenu extends AbstractMenu {
             "&cClick to learn more!"
         );
         
-        setItem(CUSTOM_TAG_INFO_SLOT, createItem(Material.WRITABLE_BOOK, 
-            "&e&lCustom Tags", lore), () -> {
+        setItem(customTagInfoSlot, createItem(material, "&e&lCustom Tags", lore), () -> {
             player.closeInventory();
-            player.sendMessage(MenuUtils.colorize("&8[&bCustom&8] &7Use &f/requesttag <name> &7to request a custom prefix!"));
-            player.sendMessage(MenuUtils.colorize("&8[&bCustom&8] &7Example: &f/requesttag LEGEND"));
-            player.sendMessage(MenuUtils.colorize("&8[&bCustom&8] &7Staff will review and approve/deny your request."));
+            player.sendMessage(plugin.getConfigManager().getMessage("tags.info-line1"));
+            player.sendMessage(plugin.getConfigManager().getMessage("tags.info-line2"));
+            player.sendMessage(plugin.getConfigManager().getMessage("tags.info-line3"));
+        });
+    }
+    
+    private void addResetButton() {
+        // Get reset button configuration
+        ConfigurationSection menuConfig = plugin.getConfigManager().getPrefixMenuConfig()
+            .getConfigurationSection("menu");
+        Material material = Material.BARRIER;
+        
+        if (menuConfig != null) {
+            ConfigurationSection resetSection = menuConfig.getConfigurationSection("reset-button");
+            if (resetSection != null) {
+                String materialName = resetSection.getString("material");
+                if (materialName != null) {
+                    try {
+                        material = Material.valueOf(materialName.toUpperCase());
+                    } catch (IllegalArgumentException e) {
+                        plugin.getLogger().warning("Invalid material for reset button: " + materialName);
+                    }
+                }
+            }
+        }
+        
+        setItem(resetSlot, createItem(material, "&c&lReset Prefix", Arrays.asList(
+            "&7Remove your current prefix",
+            "",
+            "&cClick to reset!"
+        )), (Runnable) () -> {
+            resetPrefix();
         });
     }
     
@@ -118,9 +216,9 @@ public class PrefixSelectionMenu extends AbstractMenu {
                     
                     // Send message with preview
                     String preview = MenuUtils.createPreview(prefixValue, "");
-                    String message = plugin.getConfigManager().getMessage("prefix-changed");
+                    String message = plugin.getConfigManager().getMessage("prefix.changed");
                     message = message.replace("{value}", preview);
-                    player.sendMessage(MenuUtils.colorize(message));
+                    player.sendMessage(message);
                     
                     // Close menu
                     player.closeInventory();
@@ -136,7 +234,7 @@ public class PrefixSelectionMenu extends AbstractMenu {
                     
                     plugin.getPlayerDataManager().savePlayerData(data).thenRun(() -> {
                         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
-                        player.sendMessage(MenuUtils.colorize("&8[&bCustom&8] &aYour prefix has been removed!"));
+                        player.sendMessage(plugin.getConfigManager().getMessage("prefix.removed"));
                         player.closeInventory();
                     });
                 }
@@ -157,5 +255,38 @@ public class PrefixSelectionMenu extends AbstractMenu {
     
     private boolean canUseCustomTags() {
         return plugin.getConfigManager().canUseCustomTags(rank);
+    }
+    
+    private void fillEmptyWithConfiguredFiller() {
+        // Get filler configuration
+        ConfigurationSection prefixConfig = plugin.getConfigManager().getPrefixMenuConfig();
+        ConfigurationSection fillerConfig = prefixConfig.getConfigurationSection("menu.filler");
+        
+        if (fillerConfig == null) {
+            plugin.getLogger().warning("No filler configuration found for prefix menu");
+            return;
+        }
+        
+        String materialName = fillerConfig.getString("material");
+        if (materialName == null) {
+            plugin.getLogger().warning("No filler material specified for prefix menu");
+            return;
+        }
+        
+        try {
+            Material fillerMaterial = Material.valueOf(materialName.toUpperCase());
+            String fillerName = fillerConfig.getString("name", " ");
+            
+            ItemStack filler = createItem(fillerMaterial, fillerName, null);
+            
+            // Fill empty slots
+            for (int i = 0; i < inventory.getSize(); i++) {
+                if (inventory.getItem(i) == null) {
+                    inventory.setItem(i, filler);
+                }
+            }
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning("Invalid filler material: " + materialName);
+        }
     }
 }

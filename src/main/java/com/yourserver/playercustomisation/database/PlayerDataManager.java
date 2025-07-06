@@ -20,11 +20,13 @@ public class PlayerDataManager {
     private final Map<UUID, Long> cacheTimestamps = new ConcurrentHashMap<>();
     
     // 30 second cache TTL as specified
-    private static final long CACHE_TTL = 30000;
+    private final long CACHE_TTL;
 
     public PlayerDataManager(PlayerCustomisation plugin, MySQL mysql) {
         this.plugin = plugin;
         this.mysql = mysql;
+        // Load cache TTL from config
+        this.CACHE_TTL = plugin.getConfig().getLong("cache.player-data-ttl", 30000);
     }
 
     public CompletableFuture<PlayerData> getPlayerData(UUID uuid) {

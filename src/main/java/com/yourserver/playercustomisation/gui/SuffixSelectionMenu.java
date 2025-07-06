@@ -1,9 +1,11 @@
 package com.yourserver.playercustomisation.gui;
 
 import com.yourserver.playercustomisation.PlayerCustomisation;
+import com.yourserver.playercustomisation.config.ConfigManager;
 import com.yourserver.playercustomisation.models.PlayerData;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -12,57 +14,110 @@ import java.util.*;
 /**
  * Menu for selecting suffixes
  * Shows symbols and short tags that appear after player names
+ * All configuration is loaded from suffix.yml
  */
 public class SuffixSelectionMenu extends AbstractMenu {
-    private static final int RESET_SLOT = 49;
+    // Configuration-loaded slot positions
+    private int resetSlot = 49;
     
     // Store player's current color for preview
     private String playerColor = null;
     
     public SuffixSelectionMenu(PlayerCustomisation plugin, Player player, String rank) {
-        super(plugin, player, rank, "&b&lSuffix Selection &7(" + rank + ")", 54);
+        super(plugin, player, rank, getMenuTitle(plugin, rank), getMenuSize(plugin));
+        
+        // Load slot positions from config
+        loadSlotPositions();
         
         // Get player's current color for preview
         loadPlayerColor();
     }
     
+    private static String getMenuTitle(PlayerCustomisation plugin, String rank) {
+        ConfigurationSection menuConfig = plugin.getConfigManager().getSuffixMenuConfig()
+            .getConfigurationSection("menu");
+        String titleFormat = menuConfig != null ? 
+            menuConfig.getString("title", "&b&lSuffix Selection &7({rank})") : 
+            "&b&lSuffix Selection &7({rank})";
+        return titleFormat.replace("{rank}", rank);
+    }
+    
+    private static int getMenuSize(PlayerCustomisation plugin) {
+        ConfigurationSection menuConfig = plugin.getConfigManager().getSuffixMenuConfig()
+            .getConfigurationSection("menu");
+        return menuConfig != null ? menuConfig.getInt("size", 54) : 54;
+    }
+    
+    private void loadSlotPositions() {
+        ConfigurationSection suffixConfig = plugin.getConfigManager().getSuffixMenuConfig();
+        ConfigurationSection menuConfig = suffixConfig.getConfigurationSection("menu");
+        
+        if (menuConfig != null) {
+            // Load special slots
+            ConfigurationSection specialSlots = menuConfig.getConfigurationSection("special-slots");
+            if (specialSlots != null) {
+                resetSlot = specialSlots.getInt("reset-button", 49);
+            }
+        }
+    }
+    
     @Override
     protected void build() {
         // Get available suffixes for this rank
-        List<String> availableSuffixes = plugin.getConfigManager().getAvailableSuffixes(rank);
+        List<ConfigManager.SuffixOption> availableSuffixes = plugin.getConfigManager().getAvailableSuffixOptions(rank);
         
-        // Display suffixes in a grid
+        // Display suffixes in a grid, automatically finding empty slots
         int slot = 0;
-        for (String suffix : availableSuffixes) {
-            if (slot >= 45) break; // Leave bottom row for special items
+        int addedCount = 0;
+        
+        for (ConfigManager.SuffixOption suffix : availableSuffixes) {
+            // Find next available slot
+            while (slot < inventory.getSize()) {
+                // Skip special slots
+                if (slot == resetSlot) {
+                    slot++;
+                    continue;
+                }
+                
+                // Skip bottom row (reserved for special items)
+                if (slot >= inventory.getSize() - 9) {
+                    break;
+                }
+                
+                // Use this slot
+                addSuffixOption(slot, suffix);
+                slot++;
+                addedCount++;
+                break;
+            }
             
-            addSuffixOption(slot, suffix);
-            slot++;
+            // Stop if we've filled all available slots
+            if (slot >= inventory.getSize() - 9) {
+                break;
+            }
         }
         
         // Add reset button
-        setItem(RESET_SLOT, createResetButton("Suffix"), (Runnable) () -> {
-            resetSuffix();
-        });
+        addResetButton();
         
-        // Fill empty slots
-        fillEmpty();
+        // Fill empty slots with configured filler
+        fillEmptyWithConfiguredFiller();
     }
     
-    private void addSuffixOption(int slot, String suffixText) {
-        // Determine material based on suffix
-        Material material = getSuffixMaterial(suffixText);
+    private void addSuffixOption(int slot, ConfigManager.SuffixOption suffixOption) {
+        // Get material from config
+        Material material = suffixOption.material;
         
         // Create preview with player's color
         String preview;
         if (playerColor != null) {
-            preview = "&f" + player.getName() + " " + MenuUtils.applyPlayerColor(playerColor, suffixText);
+            preview = "&f" + player.getName() + " " + MenuUtils.applyPlayerColor(playerColor, suffixOption.value);
         } else {
-            preview = "&f" + player.getName() + " " + suffixText;
+            preview = "&f" + player.getName() + " " + suffixOption.value;
         }
         
-        // Style the suffix for display
-        String displayName = getStyledSuffix(suffixText);
+        // Style the suffix using config color
+        String displayName = suffixOption.color + suffixOption.value;
         
         List<String> lore = Arrays.asList(
             "&7Preview: " + preview,
@@ -70,16 +125,45 @@ public class SuffixSelectionMenu extends AbstractMenu {
             "&eClick to apply!"
         );
         
-        // Make special suffixes glow
+        // Use glow from config
         ItemStack item;
-        if (isSpecialSuffix(suffixText)) {
+        if (suffixOption.glow) {
             item = createGlowingItem(material, displayName, lore);
         } else {
             item = createItem(material, displayName, lore);
         }
         
         setItem(slot, item, (Runnable) () -> {
-            applySuffix(suffixText);
+            applySuffix(suffixOption.value);
+        });
+    }
+    
+    private void addResetButton() {
+        // Get reset button configuration
+        ConfigurationSection menuConfig = plugin.getConfigManager().getSuffixMenuConfig()
+            .getConfigurationSection("menu");
+        Material material = Material.BARRIER;
+        
+        if (menuConfig != null) {
+            ConfigurationSection resetSection = menuConfig.getConfigurationSection("reset-button");
+            if (resetSection != null) {
+                String materialName = resetSection.getString("material");
+                if (materialName != null) {
+                    try {
+                        material = Material.valueOf(materialName.toUpperCase());
+                    } catch (IllegalArgumentException e) {
+                        plugin.getLogger().warning("Invalid material for reset button: " + materialName);
+                    }
+                }
+            }
+        }
+        
+        setItem(resetSlot, createItem(material, "&c&lReset Suffix", Arrays.asList(
+            "&7Remove your current suffix",
+            "",
+            "&cClick to reset!"
+        )), (Runnable) () -> {
+            resetSuffix();
         });
     }
     
@@ -99,9 +183,10 @@ public class SuffixSelectionMenu extends AbstractMenu {
                     // Send message with preview
                     String preview = playerColor != null ? 
                         MenuUtils.applyPlayerColor(playerColor, suffix) : suffix;
-                    player.sendMessage(MenuUtils.colorize(
-                        "&8[&bCustom&8] &aSuffix set to: " + preview
-                    ));
+                    
+                    String message = plugin.getConfigManager().getMessage("suffix.changed");
+                    message = message.replace("{value}", preview);
+                    player.sendMessage(message);
                     
                     // Close menu
                     player.closeInventory();
@@ -117,7 +202,7 @@ public class SuffixSelectionMenu extends AbstractMenu {
                     
                     plugin.getPlayerDataManager().savePlayerData(data).thenRun(() -> {
                         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
-                        player.sendMessage(MenuUtils.colorize("&8[&bCustom&8] &aYour suffix has been removed!"));
+                        player.sendMessage(plugin.getConfigManager().getMessage("suffix.removed"));
                         player.closeInventory();
                     });
                 }
@@ -136,138 +221,36 @@ public class SuffixSelectionMenu extends AbstractMenu {
         }
     }
     
-    private Material getSuffixMaterial(String suffix) {
-        // Special materials for specific suffixes
-        switch (suffix) {
-            case "★":
-                return Material.GOLD_NUGGET;
-            case "✦":
-            case "✯":
-                return Material.FIREWORK_STAR;
-            case "♦":
-                return Material.DIAMOND;
-            case "✓":
-                return Material.LIME_DYE;
-            case "✪":
-                return Material.SUNFLOWER;
-            case "⚡":
-                return Material.BLAZE_ROD;
-            case "♛":
-                return Material.GOLDEN_HELMET;
-            case "⚔":
-                return Material.IRON_SWORD;
-            case "☣":
-                return Material.SPIDER_EYE;
-            case "火": // Fire
-                return Material.BLAZE_POWDER;
-            case "水": // Water
-                return Material.WATER_BUCKET;
-            case "金": // Gold
-                return Material.GOLD_INGOT;
-            case "王": // King
-                return Material.GOLDEN_HELMET;
-            default:
-                // For text suffixes
-                if (suffix.matches("[IVX]+")) { // Roman numerals
-                    return Material.BOOK;
-                } else if (suffix.length() <= 3) { // Short tags
-                    return Material.NAME_TAG;
-                }
-                return Material.PAPER;
+    private void fillEmptyWithConfiguredFiller() {
+        // Get filler configuration
+        ConfigurationSection suffixConfig = plugin.getConfigManager().getSuffixMenuConfig();
+        ConfigurationSection fillerConfig = suffixConfig.getConfigurationSection("menu.filler");
+        
+        if (fillerConfig == null) {
+            plugin.getLogger().warning("No filler configuration found for suffix menu");
+            return;
         }
-    }
-    
-    private String getStyledSuffix(String suffix) {
-        // Apply colors and formatting to suffixes
-        switch (suffix) {
-            // Symbols get colored
-            case "★":
-                return "&6&l" + suffix;
-            case "✦":
-                return "&b&l" + suffix;
-            case "♦":
-                return "&3&l" + suffix;
-            case "✓":
-                return "&a&l" + suffix;
-            case "✪":
-                return "&e&l" + suffix;
-            case "⚡":
-                return "&6&l" + suffix;
-            case "♛":
-                return "&d&l" + suffix;
-            case "⚔":
-                return "&7&l" + suffix;
-            case "☣":
-                return "&2&l" + suffix;
-            case "✧":
-                return "&5&l" + suffix;
-            
-            // Special formatting for certain text
-            case "PRO":
-                return "&6&lPRO";
-            case "GOD":
-                return "&c&lGOD";
-            case "MVP":
-                return "&b&lMVP";
-            case "ACE":
-                return "&a&lACE";
-            case "MAX":
-                return "&4&lMAX";
-            
-            // Social media tags
-            case "YT":
-                return "&c&lYT";
-            case "TV":
-                return "&5&lTV";
-            case "GG":
-                return "&a&lGG";
-            
-            // Fun suffixes
-            case "UwU":
-                return "&d&lUwU";
-            case "OwO":
-                return "&d&lOwO";
-            
-            // Roman numerals
-            case "I":
-            case "II":
-            case "III":
-            case "IV":
-            case "V":
-            case "X":
-                return "&e&l" + suffix;
-            
-            // Infinity
-            case "∞":
-                return "&b&l∞";
-            
-            // Asian characters
-            case "火":
-                return "&c&l火";
-            case "水":
-                return "&b&l水";
-            case "金":
-                return "&6&l金";
-            case "王":
-                return "&d&l王";
-            
-            // Bracketed versions
-            default:
-                if (suffix.startsWith("[") && suffix.endsWith("]")) {
-                    return "&7&l" + suffix;
-                } else if (suffix.startsWith("{") && suffix.endsWith("}")) {
-                    return "&3&l" + suffix;
-                } else if (suffix.startsWith("<") && suffix.endsWith(">")) {
-                    return "&b&l" + suffix;
-                } else if (suffix.startsWith("~") && suffix.endsWith("~")) {
-                    return "&d&l" + suffix;
-                }
-                return "&f&l" + suffix;
+        
+        String materialName = fillerConfig.getString("material");
+        if (materialName == null) {
+            plugin.getLogger().warning("No filler material specified for suffix menu");
+            return;
         }
-    }
-    
-    private boolean isSpecialSuffix(String suffix) {
-        return Arrays.asList("★", "✦", "♦", "♛", "⚔", "∞", "GOD", "MVP", "王")
-            .contains(suffix);
+        
+        try {
+            Material fillerMaterial = Material.valueOf(materialName.toUpperCase());
+            String fillerName = fillerConfig.getString("name", " ");
+            
+            ItemStack filler = createItem(fillerMaterial, fillerName, null);
+            
+            // Fill empty slots
+            for (int i = 0; i < inventory.getSize(); i++) {
+                if (inventory.getItem(i) == null) {
+                    inventory.setItem(i, filler);
+                }
+            }
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning("Invalid filler material: " + materialName);
+        }
     }
 }

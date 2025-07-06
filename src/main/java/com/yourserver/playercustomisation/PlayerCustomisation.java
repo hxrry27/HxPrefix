@@ -5,6 +5,7 @@ import com.yourserver.playercustomisation.database.MySQL;
 import com.yourserver.playercustomisation.database.PlayerDataManager;
 import com.yourserver.playercustomisation.listeners.PlayerJoinListener;
 import com.yourserver.playercustomisation.placeholders.CustomisationExpansion;
+import com.yourserver.playercustomisation.utils.ColorUtils;
 import com.yourserver.playercustomisation.utils.PermissionUtils;
 import com.yourserver.playercustomisation.gui.MenuManager;
 import com.yourserver.playercustomisation.config.ConfigManager;
@@ -64,6 +65,10 @@ public class PlayerCustomisation extends JavaPlugin implements CommandExecutor {
     private void initializePlugin() {
         getLogger().info("Initializing PlayerCustomisation...");
         
+        // Initialize utilities with plugin instance
+        PermissionUtils.init(this);
+        ColorUtils.init(this);
+
         // Double-check our config values
         String host = getConfig().getString("database.mysql.host");
         getLogger().info("Connecting to MySQL at: " + host);
@@ -151,35 +156,44 @@ public class PlayerCustomisation extends JavaPlugin implements CommandExecutor {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (command.getName().equals("pcreload")) {
-            if (!sender.hasPermission("playercustomisation.admin.reload")) {
-                sender.sendMessage("§cYou don't have permission to use this command!");
-                return true;
-            }
-
-            // Force reload from disk
-            File configFile = new File(getDataFolder(), "config.yml");
-            FileConfiguration diskConfig = YamlConfiguration.loadConfiguration(configFile);
-            for (String key : diskConfig.getKeys(true)) {
-                getConfig().set(key, diskConfig.get(key));
-            }
-            
-            configManager.loadAllConfigs();
-            PermissionUtils.clearCache();
-            playerDataManager.clearCache();
-
-            sender.sendMessage("§aPlayerCustomisation configuration reloaded from disk!");
-            sender.sendMessage("§7MySQL Host: " + getConfig().getString("database.mysql.host"));
-            sender.sendMessage("§7Loaded: " + 
-                configManager.getSolidColors().size() + " colors, " +
-                configManager.getGradients().size() + " gradients, " +
-                configManager.getAllPrefixes().size() + " prefixes, " +
-                configManager.getAllSuffixes().size() + " suffixes");
+public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    if (command.getName().equals("pcreload")) {
+        if (!sender.hasPermission("playercustomisation.admin.reload")) {
+            sender.sendMessage(configManager.getMessage("permissions.no-permission"));
             return true;
         }
-        return false;
+
+        // Force reload from disk
+        File configFile = new File(getDataFolder(), "config.yml");
+        FileConfiguration diskConfig = YamlConfiguration.loadConfiguration(configFile);
+        for (String key : diskConfig.getKeys(true)) {
+            getConfig().set(key, diskConfig.get(key));
+        }
+        
+        configManager.loadAllConfigs();
+        PermissionUtils.clearCache();
+        PermissionUtils.reloadConfig();
+        ColorUtils.reloadPattern();
+        playerDataManager.clearCache();
+
+        // Use messages from config
+        sender.sendMessage(configManager.getMessage("reload.success"));
+        
+        String mysqlInfo = configManager.getMessage("reload.mysql-info");
+        mysqlInfo = mysqlInfo.replace("{host}", getConfig().getString("database.mysql.host"));
+        sender.sendMessage(mysqlInfo);
+        
+        String loadedInfo = configManager.getMessage("reload.loaded-info");
+        loadedInfo = loadedInfo.replace("{colors}", String.valueOf(configManager.getSolidColors().size()))
+                               .replace("{gradients}", String.valueOf(configManager.getGradients().size()))
+                               .replace("{prefixes}", String.valueOf(configManager.getAllPrefixes().size()))
+                               .replace("{suffixes}", String.valueOf(configManager.getAllSuffixes().size()));
+        sender.sendMessage(loadedInfo);
+        
+        return true;
     }
+    return false;
+}
 
     // Getters
     public PlayerDataManager getPlayerDataManager() {

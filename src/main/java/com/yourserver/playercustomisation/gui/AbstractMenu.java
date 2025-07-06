@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 /**
  * Base class for all GUI menus
+ * All materials and configurations are loaded from config files
  */
 public abstract class AbstractMenu {
     protected final PlayerCustomisation plugin;
@@ -27,12 +28,6 @@ public abstract class AbstractMenu {
     protected final String rank;
     protected final Inventory inventory;
     protected final Map<Integer, Consumer<ClickType>> clickHandlers = new HashMap<>();
-    
-    // Common materials
-    protected static final Material FILLER_MATERIAL = Material.GRAY_STAINED_GLASS_PANE;
-    protected static final Material RESET_MATERIAL = Material.BARRIER;
-    protected static final Material BACK_MATERIAL = Material.ARROW;
-    protected static final Material NEXT_PAGE_MATERIAL = Material.ARROW;
     
     public AbstractMenu(PlayerCustomisation plugin, Player player, String rank, String title, int size) {
         this.plugin = plugin;
@@ -105,18 +100,6 @@ public abstract class AbstractMenu {
     }
     
     /**
-     * Fills empty slots with filler glass
-     */
-    protected void fillEmpty() {
-        ItemStack filler = createItem(FILLER_MATERIAL, " ", null);
-        for (int i = 0; i < inventory.getSize(); i++) {
-            if (inventory.getItem(i) == null) {
-                inventory.setItem(i, filler);
-            }
-        }
-    }
-    
-    /**
      * Creates a basic item
      */
     protected ItemStack createItem(Material material, String name, List<String> lore) {
@@ -158,9 +141,11 @@ public abstract class AbstractMenu {
     
     /**
      * Creates a reset button
+     * Material should be configured in each menu's config
      */
     protected ItemStack createResetButton(String text) {
-        return createItem(RESET_MATERIAL, "&c&lReset " + text, Arrays.asList(
+        // This is a generic implementation - each menu should override with its own configured material
+        return createItem(Material.BARRIER, "&c&lReset " + text, Arrays.asList(
             "&7Remove your " + text.toLowerCase(),
             "",
             "&cClick to reset!"
@@ -169,9 +154,10 @@ public abstract class AbstractMenu {
     
     /**
      * Creates a back button
+     * Material should be configured if used
      */
-    protected ItemStack createBackButton() {
-        return createItem(BACK_MATERIAL, "&7« Back", Arrays.asList(
+    protected ItemStack createBackButton(Material material) {
+        return createItem(material, "&7« Back", Arrays.asList(
             "&7Return to previous menu"
         ));
     }
@@ -188,5 +174,19 @@ public abstract class AbstractMenu {
      */
     public Player getPlayer() {
         return player;
+    }
+    
+    /**
+     * Gets the player's rank
+     */
+    public String getRank() {
+        return rank;
+    }
+    
+    /**
+     * Gets the plugin instance
+     */
+    public PlayerCustomisation getPlugin() {
+        return plugin;
     }
 }

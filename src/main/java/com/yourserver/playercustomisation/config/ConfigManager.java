@@ -34,6 +34,7 @@ public class ConfigManager {
     private YamlConfiguration gradientsConfig;
     private YamlConfiguration prefixConfig;
     private YamlConfiguration suffixConfig;
+    private YamlConfiguration messagesConfig;
     
     public ConfigManager(PlayerCustomisation plugin) {
         this.plugin = plugin;
@@ -58,6 +59,23 @@ public class ConfigManager {
             this.conditional = conditional;
         }
     }
+
+    public static class SuffixOption {
+        public final String value;
+        public final Material material;
+        public final String color;
+        public final boolean glow;
+        public final List<String> ranks;
+        
+        public SuffixOption(String value, Material material, String color, 
+                        boolean glow, List<String> ranks) {
+            this.value = value;
+            this.material = material;
+            this.color = color;
+            this.glow = glow;
+            this.ranks = ranks;
+        }
+    }
     
     /**
      * Loads or reloads all configuration files
@@ -69,6 +87,7 @@ public class ConfigManager {
         prefixes.clear();
         suffixes.clear();
         ranks.clear();
+        loadMessagesConfig();
         
         // Load main config
         plugin.saveDefaultConfig();
@@ -91,6 +110,16 @@ public class ConfigManager {
         plugin.getLogger().info("- " + ranks.size() + " ranks configured");
     }
     
+    private void loadMessagesConfig() {
+        File file = new File(plugin.getDataFolder(), "messages.yml");
+        if (!file.exists()) {
+            saveResource("messages.yml");
+        }
+        
+        messagesConfig = YamlConfiguration.loadConfiguration(file);
+        plugin.getLogger().info("- " + countMessages(messagesConfig) + " messages");
+    }
+
     private void loadColorsConfig() {
         File file = new File(plugin.getDataFolder(), "solidcolours.yml");
         if (!file.exists()) {
@@ -130,6 +159,7 @@ public class ConfigManager {
     }
     
     private final List<PrefixOption> prefixOptions = new ArrayList<>();
+    private final List<SuffixOption> suffixOptions = new ArrayList<>();
 
     private void loadPrefixConfig() {
         File file = new File(plugin.getDataFolder(), "prefix.yml");
@@ -182,7 +212,49 @@ public class ConfigManager {
         }
         
         suffixConfig = YamlConfiguration.loadConfiguration(file);
-        suffixes.addAll(suffixConfig.getStringList("suffixes"));
+        suffixOptions.clear();
+        
+        // Load suffix options with full configuration
+        ConfigurationSection suffixesSection = suffixConfig.getConfigurationSection("suffixes");
+        if (suffixesSection != null) {
+            for (String key : suffixesSection.getKeys(false)) {
+                ConfigurationSection suffixSection = suffixesSection.getConfigurationSection(key);
+                if (suffixSection == null) continue;
+                
+                String value = suffixSection.getString("value");
+                String materialName = suffixSection.getString("material", "PAPER");
+                String color = suffixSection.getString("color", "&f&l");
+                boolean glow = suffixSection.getBoolean("glow", false);
+                List<String> ranks = suffixSection.getStringList("ranks");
+                
+                Material material;
+                try {
+                    material = Material.valueOf(materialName);
+                } catch (IllegalArgumentException e) {
+                    material = Material.PAPER;
+                }
+                
+                suffixOptions.add(new SuffixOption(value, material, color, glow, ranks));
+            }
+        }
+    }
+
+    public List<SuffixOption> getAvailableSuffixOptions(String rank) {
+        RankSettings settings = ranks.get(rank.toLowerCase());
+        if (settings == null || !settings.suffix) {
+            return Collections.emptyList();
+        }
+        
+        List<SuffixOption> available = new ArrayList<>();
+        
+        for (SuffixOption option : suffixOptions) {
+            // Check if this rank can use this suffix
+            if (option.ranks.contains(rank.toLowerCase())) {
+                available.add(option);
+            }
+        }
+        
+        return available;
     }
     
     private void loadRankSettings() {
@@ -370,28 +442,118 @@ public class ConfigManager {
     // Message handling
     
     public String getMessage(String key) {
-        String path = "messages." + key;
+        String path = key;
+        
+        // First try messages.yml
+        if (messagesConfig != null && messagesConfig.contains(path)) {
+            String message = messagesConfig.getString(path);
+            return processMessage(message);
+        }
+        
+        // Fall back to checking with "messages." prefix in main config
+        path = "messages." + key;
         String message = mainConfig.getString(path);
         
         if (message == null) {
             // Return a default message
-            return MenuUtils.colorize("&8[&bCustom&8] &cMissing message: " + key);
+            return MenuUtils.colorize("&cMissing message: " + key);
         }
         
-        // Handle prefix replacement without recursion
+        return processMessage(message);
+    }
+
+    private String processMessage(String message) {
+        if (message == null) return "";
+        
+        // Handle prefix replacement
         if (message.contains("{prefix}")) {
-            // Get prefix directly from config, not through getMessage
-            String prefix = mainConfig.getString("messages.prefix", "&8[&bCustom&8] ");
+            String prefix = messagesConfig != null ? 
+                messagesConfig.getString("prefix", "&8[&bCustom&8] ") :
+                mainConfig.getString("messages.prefix", "&8[&bCustom&8] ");
             message = message.replace("{prefix}", prefix);
         }
-    
+        
         return MenuUtils.colorize(message);
+    }
+
+    private int countMessages(YamlConfiguration config) {
+        int count = 0;
+        for (String key : config.getKeys(true)) {
+            if (!config.isConfigurationSection(key)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private boolean checkCondition(String condition) {
         // For now, always return true
         // Later: check dates, permissions, etc.
         return true;
+    }
+
+    //additional colormenu configs
+    public ConfigurationSection getColorMenuConfig() {
+        return colorsConfig;
+    }
+
+    public ConfigurationSection getGradientMenuConfig() {
+        return gradientsConfig;
+    }
+
+    public String getColorMenuTitle(String rank) {
+        String title = colorsConfig.getString("menu.title", "&6&lName Color Selection &7({rank})");
+        return title.replace("{rank}", rank);
+    }
+
+    public int getColorMenuSize() {
+        return colorsConfig.getInt("menu.size", 54);
+    }
+
+    // Prefix menu configuration
+    public ConfigurationSection getPrefixMenuConfig() {
+        return prefixConfig;
+    }
+
+    public String getPrefixMenuTitle(String rank) {
+        String title = prefixConfig.getString("menu.title", "&d&lPrefix Selection &7({rank})");
+        return title.replace("{rank}", rank);
+    }
+
+    public int getPrefixMenuSize() {
+        return prefixConfig.getInt("menu.size", 54);
+    }
+
+    // Suffix menu configuration
+    public ConfigurationSection getSuffixMenuConfig() {
+        return suffixConfig;
+    }
+
+    public String getSuffixMenuTitle(String rank) {
+        String title = suffixConfig.getString("menu.title", "&b&lSuffix Selection &7({rank})");
+        return title.replace("{rank}", rank);
+    }
+
+    public int getSuffixMenuSize() {
+        return suffixConfig.getInt("menu.size", 54);
+    }
+
+    // Get color slots configuration
+    public List<Integer> getColorSlots() {
+        return colorsConfig.getIntegerList("menu.color-slots");
+    }
+
+    public List<Integer> getGradientSlots() {
+        return gradientsConfig.getIntegerList("menu.gradient-slots");
+    }
+
+    // Get animation configuration
+    public int getAnimationSpeed(String animationType) {
+        return gradientsConfig.getInt("menu.animation." + animationType + ".speed", 5);
+    }
+
+    public List<String> getAnimationFrames(String animationType) {
+        return gradientsConfig.getStringList("menu.animation." + animationType + ".frames");
     }
     
     // Inner class for rank settings

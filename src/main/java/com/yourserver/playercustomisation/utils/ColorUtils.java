@@ -6,10 +6,29 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 import java.util.regex.Pattern;
 
+import com.yourserver.playercustomisation.PlayerCustomisation;
+
 public class ColorUtils {
     private static final MiniMessage miniMessage = MiniMessage.miniMessage();
     private static final LegacyComponentSerializer legacySerializer = LegacyComponentSerializer.legacySection();
-    private static final Pattern NICKNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{3,16}$");
+    private static Pattern NICKNAME_PATTERN = null;
+    private static PlayerCustomisation plugin = null;
+
+    //new initialisation method test
+    public static void init(PlayerCustomisation instance) {
+        plugin = instance;
+        reloadPattern();
+    }
+
+    public static void reloadPattern() {
+        if (plugin != null) {
+            String pattern = plugin.getConfig().getString("nickname.validation-pattern", "^[a-zA-Z0-9_]{3,16}$");
+            NICKNAME_PATTERN = Pattern.compile(pattern);
+        } else {
+            // Fallback pattern
+            NICKNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{3,16}$");
+        }
+    }
 
     public static String colorize(String text) {
         if (text == null || text.isEmpty()) {
@@ -43,7 +62,10 @@ public class ColorUtils {
         }
     }
 
-    public static boolean isValidNickname(String nickname) {
+        public static boolean isValidNickname(String nickname) {
+        if (NICKNAME_PATTERN == null) {
+            reloadPattern();
+        }
         return nickname != null && NICKNAME_PATTERN.matcher(nickname).matches();
     }
 

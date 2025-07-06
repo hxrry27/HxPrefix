@@ -27,20 +27,19 @@ public class ManageTagsCommand implements CommandExecutor {
         // In a full implementation, this would open a GUI
         plugin.getPlayerDataManager().getPendingTagRequests().thenAccept(requests -> {
             if (requests.isEmpty()) {
-                sender.sendMessage(ColorUtils.colorize("&aNo pending tag requests."));
+                sender.sendMessage(plugin.getConfigManager().getMessage("tags.no-pending"));
                 return;
             }
 
-            sender.sendMessage(ColorUtils.colorize("&6&l=== Pending Tag Requests ==="));
+            sender.sendMessage(plugin.getConfigManager().getMessage("tags.pending-header"));
             for (TagRequest request : requests) {
-                sender.sendMessage(ColorUtils.colorize(String.format(
-                    "&7[%d] &b%s &7requested: &f%s",
-                    request.getId(),
-                    request.getUsername(),
-                    request.getRequestedTag()
-                )));
+                String format = plugin.getConfigManager().getMessage("tags.pending-format");
+                format = format.replace("{id}", String.valueOf(request.getId()))
+                            .replace("{player}", request.getUsername())
+                            .replace("{tag}", request.getRequestedTag());
+                sender.sendMessage(format);
             }
-            sender.sendMessage(ColorUtils.colorize("&7Use a proper admin GUI to approve/deny these requests."));
+            sender.sendMessage(plugin.getConfigManager().getMessage("tags.pending-footer"));
         });
 
         return true;
