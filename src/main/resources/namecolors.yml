@@ -1,0 +1,291 @@
+# Name Colors Configuration
+# Grouped color system - similar to prefix categories!
+
+# Default values
+defaults:
+  material: PAPER
+  glow: false
+  
+# Menu Configuration
+menu:
+  title: "&6&lName Color Selection &7({rank})"
+  size: 54
+  
+  # Group by: "type" or "mixed" (all together)
+  group-by: "type"
+  
+  filler:
+    material: GRAY_STAINED_GLASS_PANE
+    name: " "
+    
+  special-slots:
+    reset-button: 49
+    
+  reset-button:
+    material: BARRIER
+    name: "&c&lReset Color"
+    lore:
+      - "&7Remove your current name color"
+      - ""
+      - "&cClick to reset!"
+
+# Color Groups System
+# ===================
+# Define named groups of colors that can be assigned to ranks
+
+color-groups:
+  # Basic primary colors
+  primary:
+    - name: "Red"
+      type: "solid"
+      value: "#FF0000"
+      material: RED_DYE
+    - name: "Blue"
+      type: "solid"
+      value: "#0000FF"
+      material: BLUE_DYE
+    - name: "Yellow"
+      type: "solid"
+      value: "#FFFF00"
+      material: YELLOW_DYE
+      
+  # Extended solid colors
+  extended:
+    - name: "Green"
+      type: "solid"
+      value: "#00FF00"
+      material: LIME_DYE
+    - name: "Orange"
+      type: "solid"
+      value: "#FF8800"
+      material: ORANGE_DYE
+    - name: "Purple"
+      type: "solid"
+      value: "#AA00AA"
+      material: PURPLE_DYE
+    - name: "Pink"
+      type: "solid"
+      value: "#FF55FF"
+      material: PINK_DYE
+    - name: "Aqua"
+      type: "solid"
+      value: "#55FFFF"
+      material: CYAN_DYE
+      
+  # Monochrome colors
+  monochrome:
+    - name: "White"
+      type: "solid"
+      value: "#FFFFFF"
+      material: WHITE_DYE
+    - name: "Light Gray"
+      type: "solid"
+      value: "#AAAAAA"
+      material: LIGHT_GRAY_DYE
+    - name: "Gray"
+      type: "solid"
+      value: "#555555"
+      material: GRAY_DYE
+    - name: "Black"
+      type: "solid"
+      value: "#000000"
+      material: BLACK_DYE
+      
+  # Dark variants
+  dark-colors:
+    - name: "Dark Red"
+      type: "solid"
+      value: "#AA0000"
+      material: RED_DYE
+    - name: "Dark Blue"
+      type: "solid"
+      value: "#0000AA"
+      material: BLUE_DYE
+    - name: "Dark Green"
+      type: "solid"
+      value: "#00AA00"
+      material: GREEN_DYE
+    - name: "Dark Aqua"
+      type: "solid"
+      value: "#00AAAA"
+      material: CYAN_DYE
+      
+  # Basic gradients
+  basic-gradients:
+    - name: "Fire"
+      type: "gradient"
+      value: ["#FF0000", "#FFFF00"]
+      material: BLAZE_POWDER
+      description: "&cRed &7→ &eYellow"
+      glow: true
+    - name: "Ocean"
+      type: "gradient"
+      value: ["#0080FF", "#00FFFF"]
+      material: PRISMARINE_CRYSTALS
+      description: "&9Blue &7→ &bCyan"
+      glow: true
+    - name: "Nature"
+      type: "gradient"
+      value: ["#00FF00", "#FFFF00"]
+      material: EMERALD
+      description: "&aGreen &7→ &eYellow"
+      glow: true
+      
+  # Advanced gradients
+  advanced-gradients:
+    - name: "Galaxy"
+      type: "gradient"
+      value: ["#8B00FF", "#FF00FF", "#00FFFF"]
+      material: ENDER_EYE
+      description: "&5Purple &7→ &dMagenta &7→ &bCyan"
+      glow: true
+    - name: "Sunset"
+      type: "gradient"
+      value: ["#ff6b35", "#f7931e", "#fdc830"]
+      material: ORANGE_DYE
+      description: "&6Orange &7→ &eGold"
+      glow: true
+    - name: "Aurora"
+      type: "gradient"
+      value: ["#00FF87", "#60EFFF", "#FF00FF"]
+      material: END_CRYSTAL
+      description: "&aGreen &7→ &bCyan &7→ &dMagenta"
+      glow: true
+      
+  # Premium gradients
+  premium-gradients:
+    - name: "Inferno"
+      type: "gradient"
+      value: ["#FF0000", "#FF6600", "#FFFF00"]
+      material: MAGMA_BLOCK
+      description: "&cRed &7→ &6Orange &7→ &eYellow"
+      glow: true
+    - name: "Deep Sea"
+      type: "gradient"
+      value: ["#000080", "#0080FF", "#00FFFF"]
+      material: HEART_OF_THE_SEA
+      description: "&1Navy &7→ &9Blue &7→ &bCyan"
+      glow: true
+    - name: "Cotton Candy"
+      type: "gradient"
+      value: ["#FFB6C1", "#87CEEB", "#DDA0DD"]
+      material: PINK_WOOL
+      description: "&dPink &7→ &bSky Blue &7→ &dLavender"
+      glow: true
+      
+  # Special effects
+  special-effects:
+    - name: "Rainbow"
+      type: "special"
+      value: "<rainbow>"
+      material: NETHER_STAR
+      description: "&7Special rainbow effect!"
+      glow: true
+      animation:
+        enabled: true
+        speed: 5
+        frames:
+          - "&c&lR&6&la&e&li&a&ln&b&lb&9&lo&d&lw"
+          - "&6&lR&e&la&a&li&b&ln&9&lb&d&lo&c&lw"
+          - "&e&lR&a&la&b&li&9&ln&d&lb&c&lo&6&lw"
+    - name: "Chrome"
+      type: "gradient"
+      value: ["#C0C0C0", "#FFFFFF", "#C0C0C0"]
+      material: IRON_INGOT
+      description: "&7Silver &7→ &fWhite &7→ &7Silver"
+      glow: true
+      
+  # User-specific groups (for special permissions)
+  vip-exclusive:
+    - name: "VIP Gold"
+      type: "solid"
+      value: "#FFD700"
+      material: GOLD_INGOT
+      glow: true
+    - name: "VIP Purple"
+      type: "gradient"
+      value: ["#9400D3", "#FF1493"]
+      material: AMETHYST_SHARD
+      description: "&5Violet &7→ &dPink"
+      glow: true
+
+# Rank Access Configuration
+# =========================
+# Define which color groups each rank can access
+
+rank-access:
+  default:
+    groups: []  # No colors for default rank
+    
+  supporter:
+    groups:
+      - "primary"        # Just primary colors
+      
+  patron:
+    groups:
+      - "primary"        # Primary colors
+      - "extended"       # Extended colors
+      - "monochrome"     # Black/white/gray
+      
+  vip:
+    groups:
+      - "primary"
+      - "extended"
+      - "monochrome"
+      - "basic-gradients"  # Now they get gradients!
+      - "vip-exclusive"    # Special VIP colors
+      
+  vip+:
+    groups:
+      - "primary"
+      - "extended"
+      - "monochrome"
+      - "dark-colors"
+      - "basic-gradients"
+      - "advanced-gradients"
+      - "vip-exclusive"
+      
+  mvp:
+    groups:
+      - "primary"
+      - "extended"
+      - "monochrome"
+      - "dark-colors"
+      - "basic-gradients"
+      - "advanced-gradients"
+      - "premium-gradients"
+      
+  devoted:
+    groups:
+      - "primary"
+      - "extended"
+      - "monochrome"
+      - "dark-colors"
+      - "basic-gradients"
+      - "advanced-gradients"
+      - "premium-gradients"
+      - "special-effects"    # Rainbow access!
+      
+  legend:
+    groups: ["*"]  # Access to ALL color groups
+
+# User-specific overrides (optional)
+# ==================================
+user-overrides:
+  # Give specific users access to specific colors
+  hxrry27:
+    additional-groups:
+      - "special-effects"
+    custom-colors:
+      - name: "Hxrry's Purple"
+        type: "gradient"
+        value: ["#7F00FF", "#FF00FF", "#00FFFF"]
+        material: DRAGON_EGG
+        description: "&5Custom gradient for Hxrry"
+        glow: true
+        
+  another_user:
+    # Override their rank access entirely
+    override-groups:
+      - "premium-gradients"
+      - "special-effects"

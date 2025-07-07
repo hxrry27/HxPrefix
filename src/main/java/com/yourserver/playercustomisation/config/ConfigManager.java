@@ -2,10 +2,12 @@ package com.yourserver.playercustomisation.config;
 
 import com.yourserver.playercustomisation.PlayerCustomisation;
 import com.yourserver.playercustomisation.gui.MenuUtils;
+import com.yourserver.playercustomisation.utils.PermissionUtils;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,16 +32,18 @@ public class ConfigManager {
     
     // Configuration files
     private YamlConfiguration mainConfig;
-    private YamlConfiguration colorsConfig;
-    private YamlConfiguration gradientsConfig;
+    private YamlConfiguration nameColorsConfig;
     private YamlConfiguration prefixConfig;
     private YamlConfiguration suffixConfig;
     private YamlConfiguration messagesConfig;
     
-    // New prefix system data structures
+    // New prefix/color system data structures
     private List<String> prefixTypes = new ArrayList<>();
     private Map<String, List<StyleOption>> styleCategories = new LinkedHashMap<>();
     private Map<String, RankPrefixAccess> rankPrefixAccess = new LinkedHashMap<>();
+    private Map<String, List<ColorOption>> colorGroups = new LinkedHashMap<>();
+    private Map<String, ColorGroupAccess> rankColorAccess = new LinkedHashMap<>();
+    private Map<String, UserColorOverride> userOverrides = new LinkedHashMap<>();
     private final List<PrefixOption> prefixOptions = new ArrayList<>();
     private final List<SuffixOption> suffixOptions = new ArrayList<>();
 
@@ -131,8 +135,7 @@ public class ConfigManager {
         mainConfig = (YamlConfiguration) plugin.getConfig();
         
         // Load additional config files
-        loadColorsConfig();
-        loadGradientsConfig();
+        loadNameColorsConfig();
         loadPrefixConfig();
         loadSuffixConfig();
         loadRankSettings();
@@ -156,41 +159,101 @@ public class ConfigManager {
         plugin.getLogger().info("- " + countMessages(messagesConfig) + " messages");
     }
 
-    private void loadColorsConfig() {
-        File file = new File(plugin.getDataFolder(), "solidcolours.yml");
+    private void loadNameColorsConfig() {
+        File file = new File(plugin.getDataFolder(), "namecolors.yml");
         if (!file.exists()) {
-            saveResource("solidcolours.yml");
+            saveResource("namecolors.yml");
         }
         
-        colorsConfig = YamlConfiguration.loadConfiguration(file);
-        ConfigurationSection colors = colorsConfig.getConfigurationSection("colors");
+        nameColorsConfig = YamlConfiguration.loadConfiguration(file);
+        colorGroups.clear();
+        rankColorAccess.clear();
+        userOverrides.clear();
         
-        if (colors != null) {
-            for (String key : colors.getKeys(false)) {
-                String hex = colors.getString(key);
-                if (hex != null) {
-                    solidColors.put(key, hex);
-                }
+        // Get defaults
+        String defaultMaterial = nameColorsConfig.getString("defaults.material", "PAPER");
+        boolean defaultGlow = nameColorsConfig.getBoolean("defaults.glow", false);
+        
+        // Load color groups
+        ConfigurationSection groupsSection = nameColorsConfig.getConfigurationSection("color-groups");
+        if (groupsSection != null) {
+            for (String groupName : groupsSection.getKeys(false)) {
+                List<ColorOption> colors = loadColorGroup(groupName, groupsSection, defaultMaterial, defaultGlow);
+                colorGroups.put(groupName, colors);
+                plugin.getLogger().info("Loaded color group '" + groupName + "' with " + colors.size() + " colors");
             }
+        }
+        
+        // Load rank access
+        ConfigurationSection rankAccessSection = nameColorsConfig.getConfigurationSection("rank-access");
+        if (rankAccessSection != null) {
+            for (String rank : rankAccessSection.getKeys(false)) {
+                List<String> groups = rankAccessSection.getStringList(rank + ".groups");
+                rankColorAccess.put(rank.toLowerCase(), new ColorGroupAccess(groups));
+            }
+        }
+        
+        // Load user overrides
+        ConfigurationSection userOverridesSection = nameColorsConfig.getConfigurationSection("user-overrides");
+        if (userOverridesSection != null) {
+            for (String username : userOverridesSection.getKeys(false)) {
+                ConfigurationSection userSection = userOverridesSection.getConfigurationSection(username);
+                
+                List<String> additionalGroups = userSection.getStringList("additional-groups");
+                List<String> overrideGroups = userSection.getStringList("override-groups");
+                List<ColorOption> customColors = loadCustomColors(userSection.getConfigurationSection("custom-colors"), defaultMaterial, defaultGlow);
+                
+                userOverrides.put(username.toLowerCase(), 
+                    new UserColorOverride(additionalGroups, overrideGroups, customColors));
+            }
+        }
+        
+        plugin.getLogger().info("Loaded " + colorGroups.size() + " color groups");
+        plugin.getLogger().info("Loaded " + rankColorAccess.size() + " rank access rules");
+        plugin.getLogger().info("Loaded " + userOverrides.size() + " user overrides");
+    }
+
+    public static class ColorOption {
+        public final String name;
+        public final String type; // "solid", "gradient", "special"
+        public final Object value; // String for solid, List<String> for gradient
+        public final Material material;
+        public final boolean glow;
+        public final String description;
+        public final Map<String, Object> animation;
+        
+        public ColorOption(String name, String type, Object value, Material material, 
+                        boolean glow, String description, Map<String, Object> animation) {
+            this.name = name;
+            this.type = type;
+            this.value = value;
+            this.material = material;
+            this.glow = glow;
+            this.description = description;
+            this.animation = animation;
         }
     }
-    
-    private void loadGradientsConfig() {
-        File file = new File(plugin.getDataFolder(), "gradients.yml");
-        if (!file.exists()) {
-            saveResource("gradients.yml");
+
+    public static class ColorGroupAccess {
+        public final List<String> groups;
+        public final boolean allGroups;
+        
+        public ColorGroupAccess(List<String> groups) {
+            this.groups = groups;
+            this.allGroups = groups.contains("*");
         }
+    }
+
+    public static class UserColorOverride {
+        public final List<String> additionalGroups;
+        public final List<String> overrideGroups;
+        public final List<ColorOption> customColors;
         
-        gradientsConfig = YamlConfiguration.loadConfiguration(file);
-        ConfigurationSection grads = gradientsConfig.getConfigurationSection("gradients");
-        
-        if (grads != null) {
-            for (String key : grads.getKeys(false)) {
-                List<String> colors = grads.getStringList(key);
-                if (!colors.isEmpty()) {
-                    gradients.put(key, colors);
-                }
-            }
+        public UserColorOverride(List<String> additionalGroups, List<String> overrideGroups, 
+                            List<ColorOption> customColors) {
+            this.additionalGroups = additionalGroups != null ? additionalGroups : new ArrayList<>();
+            this.overrideGroups = overrideGroups;
+            this.customColors = customColors != null ? customColors : new ArrayList<>();
         }
     }
 
@@ -298,8 +361,8 @@ public class ConfigManager {
                     
                     // For each style in this category
                     for (StyleOption style : styles) {
-                        // Generate the combination
-                        String formattedValue = style.format.replace("{PREFIX}", "[" + prefixType + "]");
+                        // Generate the combination - NO BRACKETS!
+                        String formattedValue = style.format.replace("{PREFIX}", prefixType);
                         String displayName = prefixType + " " + style.name;
                         
                         // Check if this combination already exists
@@ -560,24 +623,28 @@ public class ConfigManager {
         YamlConfiguration config = new YamlConfiguration();
         
         switch (name) {
-            case "solidcolours.yml":
-                config.set("colors.Red", "#FF0000");
-                config.set("colors.Blue", "#0000FF");
-                config.set("colors.Green", "#00FF00");
-                config.set("colors.Yellow", "#FFFF00");
-                config.set("colors.Aqua", "#00FFFF");
-                config.set("colors.Pink", "#FF55FF");
-                config.set("colors.White", "#FFFFFF");
-                break;
+            case "namecolors.yml":
+                // Basic menu settings
+                config.set("menu.title", "&6&lName Color Selection &7({rank})");
+                config.set("menu.size", 54);
                 
-            case "gradients.yml":
-                config.set("gradients.Fire", Arrays.asList("#FF0000", "#FFFF00"));
-                config.set("gradients.Ocean", Arrays.asList("#0080FF", "#00FFFF"));
-                config.set("gradients.Nature", Arrays.asList("#00FF00", "#FFFF00"));
+                // Basic solid colors
+                config.set("solid-colors.Red.hex", "#FF0000");
+                config.set("solid-colors.Red.material", "RED_DYE");
+                config.set("solid-colors.Blue.hex", "#0000FF");
+                config.set("solid-colors.Blue.material", "BLUE_DYE");
+                config.set("solid-colors.Green.hex", "#00FF00");
+                config.set("solid-colors.Green.material", "LIME_DYE");
+                
+                // Basic gradients
+                config.set("gradients.Fire.colors", Arrays.asList("#FF0000", "#FFFF00"));
+                config.set("gradients.Fire.material", "BLAZE_POWDER");
+                config.set("gradients.Ocean.colors", Arrays.asList("#0080FF", "#00FFFF"));
+                config.set("gradients.Ocean.material", "PRISMARINE_CRYSTALS");
                 break;
                 
             case "prefix.yml":
-                config.set("prefixes", Arrays.asList("PLAYER", "MEMBER", "VIP", "ELITE", "PREMIUM"));
+                config.set("prefix-types", Arrays.asList("PLAYER", "MEMBER", "VIP", "ELITE", "PREMIUM"));
                 break;
                 
             case "suffix.yml":
@@ -713,20 +780,20 @@ public class ConfigManager {
 
     // Additional menu config methods
     public ConfigurationSection getColorMenuConfig() {
-        return colorsConfig;
+        return nameColorsConfig;
     }
 
     public ConfigurationSection getGradientMenuConfig() {
-        return gradientsConfig;
+        return nameColorsConfig;
     }
 
     public String getColorMenuTitle(String rank) {
-        String title = colorsConfig.getString("menu.title", "&6&lName Color Selection &7({rank})");
+        String title = nameColorsConfig.getString("menu.title", "&6&lName Color Selection &7({rank})");
         return title.replace("{rank}", rank);
     }
 
     public int getColorMenuSize() {
-        return colorsConfig.getInt("menu.size", 54);
+        return nameColorsConfig.getInt("menu.size", 54);
     }
 
     // Prefix menu configuration
@@ -759,22 +826,172 @@ public class ConfigManager {
 
     // Get color slots configuration
     public List<Integer> getColorSlots() {
-        return colorsConfig.getIntegerList("menu.color-slots");
+        return nameColorsConfig.getIntegerList("menu.color-slots");
     }
 
     public List<Integer> getGradientSlots() {
-        return gradientsConfig.getIntegerList("menu.gradient-slots");
+        return nameColorsConfig.getIntegerList("menu.gradient-slots");
     }
 
     // Get animation configuration
     public int getAnimationSpeed(String animationType) {
-        return gradientsConfig.getInt("menu.animation." + animationType + ".speed", 5);
+        return nameColorsConfig.getInt("special.rainbow.animation.speed", 5);
     }
 
     public List<String> getAnimationFrames(String animationType) {
-        return gradientsConfig.getStringList("menu.animation." + animationType + ".frames");
+        return nameColorsConfig.getStringList("special.rainbow.animation.frames");
     }
     
+    private List<ColorOption> loadColorGroup(String groupName, ConfigurationSection groupsSection, 
+                                       String defaultMaterial, boolean defaultGlow) {
+    List<ColorOption> colors = new ArrayList<>();
+    List<Map<?, ?>> colorList = groupsSection.getMapList(groupName);
+    
+    for (Map<?, ?> colorMap : colorList) {
+        try {
+            String name = (String) colorMap.get("name");
+            String type = (String) colorMap.get("type");
+            Object value = colorMap.get("value");
+            
+            String materialName = colorMap.containsKey("material") ? 
+                (String) colorMap.get("material") : defaultMaterial;
+            boolean glow = colorMap.containsKey("glow") ? 
+                (Boolean) colorMap.get("glow") : defaultGlow;
+            String description = (String) colorMap.get("description");
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object> animation = (Map<String, Object>) colorMap.get("animation");
+            
+            Material material;
+            try {
+                material = Material.valueOf(materialName.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Invalid material " + materialName + " for color " + name);
+                material = Material.valueOf(defaultMaterial);
+            }
+            
+            colors.add(new ColorOption(name, type, value, material, glow, description, animation));
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error loading color in group " + groupName + ": " + e.getMessage());
+        }
+    }
+    
+    return colors;
+}
+
+private List<ColorOption> loadCustomColors(ConfigurationSection section, String defaultMaterial, boolean defaultGlow) {
+    List<ColorOption> colors = new ArrayList<>();
+    if (section == null) return colors;
+    
+    for (String key : section.getKeys(false)) {
+        ConfigurationSection colorSection = section.getConfigurationSection(key);
+        if (colorSection != null) {
+            // Load individual color from section
+            String name = colorSection.getString("name");
+            String type = colorSection.getString("type");
+            Object value = colorSection.get("value");
+            String materialName = colorSection.getString("material", defaultMaterial);
+            boolean glow = colorSection.getBoolean("glow", defaultGlow);
+            String description = colorSection.getString("description");
+            ConfigurationSection animSection = colorSection.getConfigurationSection("animation");
+            
+            Material material;
+            try {
+                material = Material.valueOf(materialName.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                material = Material.valueOf(defaultMaterial);
+            }
+            
+            Map<String, Object> animation = animSection != null ? animSection.getValues(true) : null;
+            
+            colors.add(new ColorOption(name, type, value, material, glow, description, animation));
+        }
+    }
+    
+    return colors;
+}
+
+    // Get available colors for a player
+    public List<ColorOption> getAvailableColors(Player player) {
+        List<ColorOption> available = new ArrayList<>();
+        String username = player.getName().toLowerCase();
+        String rank = PermissionUtils.getPlayerRank(player).toLowerCase();
+        
+        // Check user overrides first
+        UserColorOverride userOverride = userOverrides.get(username);
+        
+        List<String> accessibleGroups = new ArrayList<>();
+        
+        if (userOverride != null && userOverride.overrideGroups != null) {
+            // User has complete override
+            accessibleGroups = userOverride.overrideGroups;
+        } else {
+            // Get rank groups
+            ColorGroupAccess rankAccess = rankColorAccess.get(rank);
+            if (rankAccess != null) {
+                if (rankAccess.allGroups) {
+                    // Has access to all groups
+                    accessibleGroups.addAll(colorGroups.keySet());
+                } else {
+                    accessibleGroups.addAll(rankAccess.groups);
+                }
+            }
+            
+            // Add any additional groups from user override
+            if (userOverride != null) {
+                accessibleGroups.addAll(userOverride.additionalGroups);
+            }
+        }
+        
+        // Collect colors from accessible groups
+        for (String groupName : accessibleGroups) {
+            List<ColorOption> groupColors = colorGroups.get(groupName);
+            if (groupColors != null) {
+                available.addAll(groupColors);
+            }
+        }
+        
+        // Add any custom colors for this user
+        if (userOverride != null) {
+            available.addAll(userOverride.customColors);
+        }
+        
+        // Remove duplicates (by name)
+        Map<String, ColorOption> uniqueColors = new LinkedHashMap<>();
+        for (ColorOption color : available) {
+            uniqueColors.put(color.name, color);
+        }
+        
+        return new ArrayList<>(uniqueColors.values());
+    }
+
+    // Helper method to get color value as MiniMessage format
+    public static String getColorValue(ColorOption color) {
+        switch (color.type) {
+            case "solid":
+                if (color.value instanceof String) {
+                    String hex = (String) color.value;
+                    return MenuUtils.hexToMiniMessage(hex);
+                }
+                break;
+                
+            case "gradient":
+                if (color.value instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<String> colors = (List<String>) color.value;
+                    return MenuUtils.gradientToMiniMessage(colors.toArray(new String[0]));
+                }
+                break;
+                
+            case "special":
+                if (color.value instanceof String) {
+                    return (String) color.value; // Already in MiniMessage format
+                }
+                break;
+        }
+        return "<white>"; // Default fallback
+    }
+
     // Inner class for rank settings
     private static class RankSettings {
         final String name;
