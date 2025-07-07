@@ -190,6 +190,7 @@ public class SuffixSelectionMenu extends AbstractMenu {
                     
                     // Close menu
                     player.closeInventory();
+                    player.performCommand("pc-internal setsuffix " + suffix);
                 });
             });
     }
@@ -204,6 +205,7 @@ public class SuffixSelectionMenu extends AbstractMenu {
                         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
                         player.sendMessage(plugin.getConfigManager().getMessage("suffix.removed"));
                         player.closeInventory();
+                        player.performCommand("pc-internal reset suffix");
                     });
                 }
             });

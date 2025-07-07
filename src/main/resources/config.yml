@@ -119,3 +119,15 @@ nickname:
     - "notch"
     - "server"
     - "console"
+
+# Nametag settings
+nametags:
+  enabled: true
+  # Show prefix in nametag
+  show-prefix: true
+  # Show suffix in nametag
+  show-suffix: true
+  # Update nametags on join
+  update-on-join: true
+  # Delay before updating on join (ticks)
+  join-delay: 20

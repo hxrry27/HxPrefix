@@ -54,6 +54,7 @@ public class NickCommand implements CommandExecutor {
                         plugin.getPlayerDataManager().savePlayerData(data).thenRun(() -> {
                             String message = plugin.getConfig().getString("messages.nickname-reset", "&aYour nickname has been reset!");
                             player.sendMessage(ColorUtils.colorize(message));
+                            plugin.getNametagManager().updateNametag(player);
                         });
                     }
                 });

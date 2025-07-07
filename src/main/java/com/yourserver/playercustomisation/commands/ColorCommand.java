@@ -6,10 +6,6 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-/**
- * Updated ColorCommand that uses the internal GUI system
- * No longer depends on DeluxeMenus
- */
 public class ColorCommand implements CommandExecutor {
     private final PlayerCustomisation plugin;
 

@@ -30,5 +30,8 @@ public class PlayerJoinListener implements Listener {
                     }
                 }
             });
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            plugin.getNametagManager().updateNametag(event.getPlayer());
+        }, 20L);
     }
 }

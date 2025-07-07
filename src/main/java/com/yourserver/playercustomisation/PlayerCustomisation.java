@@ -4,6 +4,7 @@ import com.yourserver.playercustomisation.commands.*;
 import com.yourserver.playercustomisation.database.MySQL;
 import com.yourserver.playercustomisation.database.PlayerDataManager;
 import com.yourserver.playercustomisation.listeners.PlayerJoinListener;
+import com.yourserver.playercustomisation.nametags.NametagManager;
 import com.yourserver.playercustomisation.placeholders.CustomisationExpansion;
 import com.yourserver.playercustomisation.utils.ColorUtils;
 import com.yourserver.playercustomisation.utils.PermissionUtils;
@@ -26,6 +27,7 @@ public class PlayerCustomisation extends JavaPlugin implements CommandExecutor {
     private CustomisationExpansion placeholderExpansion;
     private MenuManager menuManager;
     private ConfigManager configManager;
+    private NametagManager nametagManager;
 
     @Override
     public void onEnable() {
@@ -69,7 +71,7 @@ public class PlayerCustomisation extends JavaPlugin implements CommandExecutor {
         PermissionUtils.init(this);
         ColorUtils.init(this);
 
-        // Double-check our config values
+        // Loggers for debug. TO-DO: add debug toggle
         String host = getConfig().getString("database.mysql.host");
         getLogger().info("Connecting to MySQL at: " + host);
         
@@ -85,14 +87,11 @@ public class PlayerCustomisation extends JavaPlugin implements CommandExecutor {
             return;
         }
 
-        // Initialize menu manager
-        menuManager = new MenuManager(this);
-
-        // Initialize config manager
-        configManager = new ConfigManager(this);
-
         // Initialize managers
         playerDataManager = new PlayerDataManager(this, mysql);
+        nametagManager = new NametagManager(this);
+        menuManager = new MenuManager(this);
+        configManager = new ConfigManager(this);
 
         // Register commands
         registerCommands();
@@ -119,13 +118,15 @@ public class PlayerCustomisation extends JavaPlugin implements CommandExecutor {
 
         // Clear caches
         PermissionUtils.clearCache();
+        // Closing all managers BEFORE closing database
         if (playerDataManager != null) {
             playerDataManager.clearCache();
         }
-
-        // Closing menu manager BEFORE closing database
         if (menuManager != null) {
             menuManager.shutdown();
+        }
+        if (nametagManager != null) {
+            nametagManager.shutdown();
         }
 
         // Close database connection
@@ -155,52 +156,55 @@ public class PlayerCustomisation extends JavaPlugin implements CommandExecutor {
         return configManager;
     }
 
-    @Override
-public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-    if (command.getName().equals("pcreload")) {
-        if (!sender.hasPermission("playercustomisation.admin.reload")) {
-            sender.sendMessage(configManager.getMessage("permissions.no-permission"));
-            return true;
-        }
-
-        // Force reload from disk
-        File configFile = new File(getDataFolder(), "config.yml");
-        FileConfiguration diskConfig = YamlConfiguration.loadConfiguration(configFile);
-        for (String key : diskConfig.getKeys(true)) {
-            getConfig().set(key, diskConfig.get(key));
-        }
-        
-        configManager.loadAllConfigs();
-        PermissionUtils.clearCache();
-        PermissionUtils.reloadConfig();
-        ColorUtils.reloadPattern();
-        playerDataManager.clearCache();
-
-        // Use messages from config
-        sender.sendMessage(configManager.getMessage("reload.success"));
-        
-        String mysqlInfo = configManager.getMessage("reload.mysql-info");
-        mysqlInfo = mysqlInfo.replace("{host}", getConfig().getString("database.mysql.host"));
-        sender.sendMessage(mysqlInfo);
-        
-        String loadedInfo = configManager.getMessage("reload.loaded-info");
-        loadedInfo = loadedInfo.replace("{colors}", String.valueOf(configManager.getSolidColors().size()))
-                               .replace("{gradients}", String.valueOf(configManager.getGradients().size()))
-                               .replace("{prefixes}", String.valueOf(configManager.getAllPrefixes().size()))
-                               .replace("{suffixes}", String.valueOf(configManager.getAllSuffixes().size()));
-        sender.sendMessage(loadedInfo);
-        
-        return true;
+    public NametagManager getNametagManager() {
+    return nametagManager;
     }
-    return false;
-}
 
-    // Getters
     public PlayerDataManager getPlayerDataManager() {
         return playerDataManager;
     }
 
     public MySQL getMySQL() {
         return mysql;
+    }
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (command.getName().equals("pcreload")) {
+            if (!sender.hasPermission("playercustomisation.admin.reload")) {
+                sender.sendMessage(configManager.getMessage("permissions.no-permission"));
+                return true;
+            }
+
+            // Force reload from disk
+            File configFile = new File(getDataFolder(), "config.yml");
+            FileConfiguration diskConfig = YamlConfiguration.loadConfiguration(configFile);
+            for (String key : diskConfig.getKeys(true)) {
+                getConfig().set(key, diskConfig.get(key));
+            }
+            
+            configManager.loadAllConfigs();
+            PermissionUtils.clearCache();
+            PermissionUtils.reloadConfig();
+            ColorUtils.reloadPattern();
+            playerDataManager.clearCache();
+
+            // Use messages from config
+            sender.sendMessage(configManager.getMessage("reload.success"));
+            
+            String mysqlInfo = configManager.getMessage("reload.mysql-info");
+            mysqlInfo = mysqlInfo.replace("{host}", getConfig().getString("database.mysql.host"));
+            sender.sendMessage(mysqlInfo);
+            
+            String loadedInfo = configManager.getMessage("reload.loaded-info");
+            loadedInfo = loadedInfo.replace("{colors}", String.valueOf(configManager.getSolidColors().size()))
+                                .replace("{gradients}", String.valueOf(configManager.getGradients().size()))
+                                .replace("{prefixes}", String.valueOf(configManager.getAllPrefixes().size()))
+                                .replace("{suffixes}", String.valueOf(configManager.getAllSuffixes().size()));
+            sender.sendMessage(loadedInfo);
+            
+            return true;
+        }
+        return false;
     }
 }
