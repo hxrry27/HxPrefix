@@ -170,6 +170,8 @@ public class PlayerCustomisation extends JavaPlugin implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        
+        
         if (command.getName().equals("pcreload")) {
             if (!sender.hasPermission("playercustomisation.admin.reload")) {
                 sender.sendMessage(configManager.getMessage("permissions.no-permission"));
@@ -189,19 +191,34 @@ public class PlayerCustomisation extends JavaPlugin implements CommandExecutor {
             ColorUtils.reloadPattern();
             playerDataManager.clearCache();
 
-            // Use messages from config
+            // Use messages from config - FIXED to avoid MemorySection toString
             sender.sendMessage(configManager.getMessage("reload.success"));
             
+            // Build the MySQL info message properly
+            String host = getConfig().getString("database.mysql.host");
             String mysqlInfo = configManager.getMessage("reload.mysql-info");
-            mysqlInfo = mysqlInfo.replace("{host}", getConfig().getString("database.mysql.host"));
+            if (mysqlInfo.contains("{host}")) {
+                mysqlInfo = mysqlInfo.replace("{host}", host);
+            }
             sender.sendMessage(mysqlInfo);
             
+            // Build the loaded info message properly
             String loadedInfo = configManager.getMessage("reload.loaded-info");
-            loadedInfo = loadedInfo.replace("{colors}", String.valueOf(configManager.getSolidColors().size()))
-                                .replace("{gradients}", String.valueOf(configManager.getGradients().size()))
-                                .replace("{prefixes}", String.valueOf(configManager.getAllPrefixes().size()))
-                                .replace("{suffixes}", String.valueOf(configManager.getAllSuffixes().size()));
+            if (loadedInfo.contains("{colors}") || loadedInfo.contains("{gradients}") || 
+                loadedInfo.contains("{prefixes}") || loadedInfo.contains("{suffixes}")) {
+                loadedInfo = loadedInfo
+                    .replace("{colors}", String.valueOf(configManager.getSolidColors().size()))
+                    .replace("{gradients}", String.valueOf(configManager.getGradients().size()))
+                    .replace("{prefixes}", String.valueOf(configManager.getAvailablePrefixOptions("test").size()))
+                    .replace("{suffixes}", String.valueOf(configManager.getAvailableSuffixOptions("test").size()));
+            }
             sender.sendMessage(loadedInfo);
+            
+            // Update nametags if enabled
+            if (nametagManager != null && getConfig().getBoolean("nametags.enabled", true)) {
+                nametagManager.updateAllNametags();
+                sender.sendMessage(configManager.getMessage("reload.nametags-updated"));
+            }
             
             return true;
         }

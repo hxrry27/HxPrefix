@@ -25,16 +25,15 @@ public class NickCommand implements CommandExecutor {
 
         // Check if player has permission
         if (!player.hasPermission("playercustomisation.nick")) {
-            String message = plugin.getConfig().getString("messages.no-permission", "&cYou don't have permission to use this command!");
-            player.sendMessage(ColorUtils.colorize(message));
+            player.sendMessage(plugin.getConfigManager().getMessage("permissions.no-permission"));
             return true;
         }
 
         // Check rank access
         String rank = PermissionUtils.getPlayerRank(player);
         if (!PermissionUtils.hasNickAccess(rank)) {
-            String message = plugin.getConfig().getString("messages.no-permission", "&cYou don't have permission to use this command!");
-            player.sendMessage(ColorUtils.colorize(message));
+            player.sendMessage(plugin.getConfigManager().getMessage("permissions.no-permission-rank")
+                .replace("{rank}", rank));
             return true;
         }
 
@@ -52,8 +51,7 @@ public class NickCommand implements CommandExecutor {
                     if (data != null) {
                         data.setNickname(null);
                         plugin.getPlayerDataManager().savePlayerData(data).thenRun(() -> {
-                            String message = plugin.getConfig().getString("messages.nickname-reset", "&aYour nickname has been reset!");
-                            player.sendMessage(ColorUtils.colorize(message));
+                            player.sendMessage(plugin.getConfigManager().getMessage("nickname.removed"));
                             plugin.getNametagManager().updateNametag(player);
                         });
                     }
@@ -63,8 +61,11 @@ public class NickCommand implements CommandExecutor {
 
         // Validate nickname
         if (!ColorUtils.isValidNickname(nickname)) {
-            String message = plugin.getConfig().getString("messages.invalid-nickname", "&cNickname must be 3-16 characters and alphanumeric!");
-            player.sendMessage(ColorUtils.colorize(message));
+            String message = plugin.getConfigManager().getMessage("nickname.invalid");
+            message = message
+                .replace("{min}", String.valueOf(plugin.getConfig().getInt("nickname.min-length", 3)))
+                .replace("{max}", String.valueOf(plugin.getConfig().getInt("nickname.max-length", 16)));
+            player.sendMessage(message);
             return true;
         }
 
@@ -76,9 +77,9 @@ public class NickCommand implements CommandExecutor {
                 }
                 data.setNickname(nickname);
                 plugin.getPlayerDataManager().savePlayerData(data).thenRun(() -> {
-                    String message = plugin.getConfig().getString("messages.nickname-changed", "&aYour nickname has been changed to: &f%nickname%");
-                    message = message.replace("%nickname%", nickname);
-                    player.sendMessage(ColorUtils.colorize(message));
+                    String message = plugin.getConfigManager().getMessage("nickname.changed");
+                    message = message.replace("{value}", nickname);
+                    player.sendMessage(message);
                 });
             });
 
