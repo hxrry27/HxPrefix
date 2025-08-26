@@ -1,60 +1,68 @@
-name: PlayerCustomisation
-version: '${project.version}'
-main: com.yourserver.playercustomisation.PlayerCustomisation
-api-version: '1.21'
-authors: [YourServer]
-description: Simple player customisation plugin
-depend: [LuckPerms]
-softdepend: [PlaceholderAPI]
+name: HxPrefix
+version: 0.1.0
+main: dev.hxrry.hxprefix.HxPrefix 
+api-version: "1.21"
+author: hxrry
+description: a prefix, suffix and name management plugin angled at velocity networks
+website: info.hxrry.dev
+
+softdepend:
+  - LuckPerms
+  - PlaceholderAPI
+  - ProtocolLib
+  - Vault
 
 commands:
-  color:
-    description: Opens color selection GUI
-    usage: /<command>
-    aliases: [colors, namecolor]
   prefix:
-    description: Opens prefix selection GUI  
-    usage: /<command>
-    aliases: [prefixes, tag]
+    description: manage your prefix
+    usage: /<command> [prefix|off]
+    aliases: []
+    permission: hxprefix.use
+    
   suffix:
-    description: Opens suffix selection GUI
-    usage: /<command>
-    aliases: [suffixes]
+    description: manage your suffix
+    usage: /<command> [suffix|off]
+    aliases: []
+    permission: hxprefix.use
+    
+  colour:
+    description: change your names colour
+    usage: /<command> [colour|off]
+    aliases: [color]  # silly american spelling alias
+    permission: hxprefix.use
+    
   nick:
-    description: Sets or removes nickname
-    usage: /<command> <nickname|off>
-    aliases: [nickname]
-  requesttag:
-    description: Request custom tag
-    usage: /<command> <tag>
-    aliases: [customtag]
-  managetags:
-    description: Staff command to review tags
-    usage: /<command>
-    permission: playercustomisation.admin.tags
-  pcreload:
-    description: Reload configuration
-    usage: /<command>
-    permission: playercustomisation.admin.reload
-  pc-internal:
-    description: Internal command for GUI interactions
-    usage: /<command>
+    description: set your nickname
+    usage: /<command> [nickname|off]
+    aliases: []
+    permission: hxprefix.use
+    
+  # admin command - using hxprefix for admin functions
+  hxprefix:
+    description: HxPrefix admin commands
+    usage: /<command> [reload|tags|reset|info|cache|migrate]
+    aliases: []
+    permission: hxprefix.admin
 
-# Only admin permissions remain
 permissions:
-  playercustomisation.admin:
+  hxprefix.use:
+    description: base permission to use HxPrefix features
+    default: true
+  hxprefix.colour:
+    description: change name colour
+    default: true
+  hxprefix.prefix:
+    description: change prefix
+    default: true
+  hxprefix.suffix:
+    description: change suffix
+    default: true
+  hxprefix.nickname:
+    description: use nickname command
+    default: true
+  hxprefix.tag:
+    description: request custom tags
+    default: true
+  hxprefix.admin:
+    description: Admin commands
     default: op
-    description: All admin permissions
-    children:
-      playercustomisation.admin.tags: true
-      playercustomisation.admin.reload: true
-      playercustomisation.admin.bypass: true
-  playercustomisation.admin.tags:
-    default: op
-    description: Manage custom tag requests
-  playercustomisation.admin.reload:
-    default: op
-    description: Reload plugin configuration
-  playercustomisation.admin.bypass:
-    default: op
-    description: Bypass rank restrictions
