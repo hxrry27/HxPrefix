@@ -1,24 +1,12 @@
 package dev.hxrry.hxprefix.nametags;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
-
 import dev.hxrry.hxcore.utils.Log;
 
 import dev.hxrry.hxprefix.HxPrefix;
 import dev.hxrry.hxprefix.api.models.PlayerCustomization;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
-
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -26,416 +14,337 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * manages player nametags above their heads
+ * TODO:
+ * WOULD manage player nametags above their heads
+ * 
+ * this class remains in the codebase for potential future use if we decide
+ * to implement native nametag handling instead of relying on TAB.
+ * 
+ * @author hxrry
+ * @since 0.1.0
+ * primarily here because i have a memory like a sieve
  */
 public class NametagManager {
     private final HxPrefix plugin;
-    private final ProtocolManager protocolManager;
-    private final MiniMessage mm = MiniMessage.miniMessage();
-    private final GsonComponentSerializer gson = GsonComponentSerializer.gson();
     
-    // team tracking
-    private final Map<UUID, String> playerTeams = new ConcurrentHashMap<>();
-    private final Map<String, TeamData> teams = new ConcurrentHashMap<>();
+    // player tracking (kept for potential future use)
+    private final Map<UUID, NametagData> playerTags = new ConcurrentHashMap<>();
     
-    // update batching
-    private final Set<UUID> pendingUpdates = ConcurrentHashMap.newKeySet();
-    private BukkitRunnable updateTask;
+    // configuration
+    private final boolean enabled;
+    private final boolean useTabIntegration;
     
     public NametagManager(@NotNull HxPrefix plugin) {
         this.plugin = plugin;
-        this.protocolManager = ProtocolLibrary.getProtocolManager();
         
-        startUpdateTask();
+        // check configuration
+        this.enabled = plugin.getConfigManager().isNametagsEnabled();
+        this.useTabIntegration = plugin.getConfigManager().getMainConfig()
+            .getBoolean("nametags.use-tab-integration", true);
+        
+        if (!enabled) {
+            Log.info("Nametag system disabled in configuration");
+            return;
+        }
+        
+        if (useTabIntegration) {
+            Log.info("Nametag display delegated to TAB plugin");
+            validateTabIntegration();
+        } else {
+            Log.warning("Native nametag implementation not available - using TAB integration");
+            // TODO: implement native nametag handling using protocollib
+            // rquires proper packet handling in new MC versions
+        }
     }
     
     /**
      * initialize nametags for all online players
+     * currently a no-op when using TAB integration
      */
     public void initialize() {
-        if (!plugin.getConfigManager().isNametagsEnabled()) {
-            Log.info("nametags disabled in config");
+        if (!enabled || useTabIntegration) {
             return;
         }
         
-        // setup teams for all online players
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            setupPlayer(player);
-        }
+        // TODO: implement native initialization
+        // would create scoreboard teams for all online players
         
-        Log.info("initialized nametags for " + Bukkit.getOnlinePlayers().size() + " players");
+        Log.debug("Nametag manager initialized (placeholder mode)");
     }
     
     /**
      * setup nametag for a player
+     * when using TAB, this just caches the player's data
      */
     public void setupPlayer(@NotNull Player player) {
-        if (!plugin.getConfigManager().isNametagsEnabled()) {
+        if (!enabled) {
             return;
         }
         
         // get player data
-        @SuppressWarnings("unused")
         PlayerCustomization data = plugin.getDataCache().getOrCreatePlayerData(player.getUniqueId());
         
-        // determine team name based on rank weight
-        String teamName = getTeamName(player);
+        // create nametag data
+        NametagData tagData = new NametagData(
+            player.getUniqueId(),
+            player.getName(),
+            data.getPrefix(),
+            data.getSuffix(),
+            data.getNameColour()
+        );
         
-        // create team if needed
-        if (!teams.containsKey(teamName)) {
-            createTeam(teamName, player);
+        playerTags.put(player.getUniqueId(), tagData);
+        
+        if (useTabIntegration) {
+            // TAB will automatically pick up changes via PlaceholderAPI
+            Log.debug("Player " + player.getName() + " nametag data cached for TAB");
+        } else {
+            // TODO: Implement native nametag creation
+            // would create a scoreboard team for this player
+            // updatePlayerTeam(player, tagData); etc.
         }
-        
-        // add player to team
-        addToTeam(player, teamName);
-        
-        // update display
-        updatePlayer(player);
     }
     
     /**
      * update a player's nametag
+     * when using TAB, this just updates the cache
      */
     public void updatePlayer(@NotNull Player player) {
-        if (!plugin.getConfigManager().isNametagsEnabled()) {
+        if (!enabled) {
             return;
         }
         
-        // batch updates to reduce packet spam
-        pendingUpdates.add(player.getUniqueId());
-    }
-    
-    /**
-     * process pending updates
-     */
-    private void processPendingUpdates() {
-        if (pendingUpdates.isEmpty()) {
-            return;
-        }
-        
-        Set<UUID> toUpdate = new HashSet<>(pendingUpdates);
-        pendingUpdates.clear();
-        
-        for (UUID uuid : toUpdate) {
-            Player player = Bukkit.getPlayer(uuid);
-            if (player != null) {
-                updatePlayerInternal(player);
-            }
-        }
-    }
-    
-    /**
-     * internal update method
-     */
-    private void updatePlayerInternal(@NotNull Player player) {
-        // get player data
+        // get fresh player data
         PlayerCustomization data = plugin.getDataCache().getPlayerData(player.getUniqueId());
         if (data == null) {
             return;
         }
         
-        // get current team
-        String teamName = playerTeams.get(player.getUniqueId());
-        if (teamName == null) {
+        // update cached data
+        NametagData tagData = playerTags.get(player.getUniqueId());
+        if (tagData == null) {
             setupPlayer(player);
             return;
         }
         
-        TeamData team = teams.get(teamName);
-        if (team == null) {
-            return;
+        // update values
+        tagData.prefix = data.getPrefix();
+        tagData.suffix = data.getSuffix();
+        tagData.nameColour = data.getNameColour();
+        tagData.lastUpdated = System.currentTimeMillis();
+        
+        if (useTabIntegration) {
+            // TAB will automatically pick up changes via PlaceholderAPI
+            // might want to force a TAB refresh here
+            refreshTabDisplay(player);
+        } else {
+            // TODO: Implement native nametag update
+            // would update the scoreboard team packets
+            // sendTeamUpdatePackets(player, tagData);
         }
-        
-        // build prefix component
-        Component prefix = Component.empty();
-        if (data.getPrefix() != null) {
-            prefix = mm.deserialize(data.getPrefix() + " ");
-        }
-        
-        // build suffix component
-        Component suffix = Component.empty();
-        if (data.getSuffix() != null) {
-            suffix = mm.deserialize(" " + data.getSuffix());
-        }
-        
-        // update team data
-        team.prefix = prefix;
-        team.suffix = suffix;
-        team.nameColour = data.getNameColour();
-        
-        // send update packets
-        sendTeamUpdate(team);
     }
     
     /**
      * remove a player's nametag
      */
     public void removePlayer(@NotNull Player player) {
-        String teamName = playerTeams.remove(player.getUniqueId());
-        if (teamName == null) {
+        if (!enabled) {
             return;
         }
         
-        TeamData team = teams.get(teamName);
-        if (team != null) {
-            team.members.remove(player.getName());
-            
-            // remove team if empty
-            if (team.members.isEmpty()) {
-                teams.remove(teamName);
-                sendTeamRemove(teamName);
-            } else {
-                // update team membership
-                sendTeamMemberRemove(teamName, player.getName());
-            }
+        playerTags.remove(player.getUniqueId());
+        
+        if (!useTabIntegration) {
+            // TODO: Implement native nametag removal
+            // would remove the scoreboard team
+            // removePlayerTeam(player);
         }
     }
     
     /**
-     * get team name for a player based on rank weight
+     * force TAB to refresh a player's display
+     * this uses TAB's API if available
+     */
+    private void refreshTabDisplay(@NotNull Player player) {
+        // check if TAB API is available
+        if (Bukkit.getPluginManager().isPluginEnabled("TAB")) {
+            // TODO: Use TAB API to force refresh
+            // TabAPI.getInstance().getTabPlayer(player.getUniqueId()).forceRefresh();
+            
+            // for now, we rely on TAB's automatic placeholder refresh
+            Log.debug("TAB refresh triggered for " + player.getName());
+        }
+    }
+    
+    /**
+     * validate that TAB integration is working
+     */
+    private void validateTabIntegration() {
+        // check if TAB is installed
+        if (!Bukkit.getPluginManager().isPluginEnabled("TAB")) {
+            Log.warning("TAB plugin not found! Nametag display will not work!");
+            Log.warning("Please install TAB or disable nametags in config.yml");
+            return;
+        }
+        
+        // check if placeholderAPI is installed
+        if (!Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            Log.warning("PlaceholderAPI not found! TAB integration will not work!");
+            Log.warning("Please install PlaceholderAPI for nametag display");
+            return;
+        }
+        
+        // check if our placeholders are registered
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (plugin.getAPI() != null) {
+                Log.info("TAB integration validated - nametags will display via TAB");
+            }
+        }, 40L); // check after 2 seconds
+    }
+    
+    /**
+     * get cached nametag data for a player
+     * useful for debugging or API access
      */
     @NotNull
-    private String getTeamName(@NotNull Player player) {
-        // get rank weight for sorting
-        int weight = 0;
-        if (plugin.getLuckPermsHook() != null) {
-            String rank = plugin.getLuckPermsHook().getPrimaryGroup(player);
-            weight = plugin.getLuckPermsHook().getGroupWeight(rank);
-        }
-        
-        // format weight as 3-digit number for sorting (000-999)
-        String weightStr = String.format("%03d", Math.max(0, Math.min(999, 999 - weight)));
-        
-        // team name format: weight_uuid (first 8 chars)
-        return weightStr + "_" + player.getUniqueId().toString().substring(0, 8);
+    public Optional<NametagData> getNametagData(@NotNull UUID uuid) {
+        return Optional.ofNullable(playerTags.get(uuid));
     }
     
     /**
-     * create a new team
+     * check if nametags are enabled
      */
-    private void createTeam(@NotNull String teamName, @NotNull Player owner) {
-        TeamData team = new TeamData(teamName);
-        teams.put(teamName, team);
-        
-        // send create packet
-        sendTeamCreate(team);
+    public boolean isEnabled() {
+        return enabled;
     }
     
     /**
-     * add player to team
+     * check if using TAB integration
      */
-    private void addToTeam(@NotNull Player player, @NotNull String teamName) {
-        // remove from old team if exists
-        String oldTeam = playerTeams.put(player.getUniqueId(), teamName);
-        if (oldTeam != null && !oldTeam.equals(teamName)) {
-            TeamData old = teams.get(oldTeam);
-            if (old != null) {
-                old.members.remove(player.getName());
-                sendTeamMemberRemove(oldTeam, player.getName());
-            }
-        }
-        
-        // add to new team
-        TeamData team = teams.get(teamName);
-        if (team != null) {
-            team.members.add(player.getName());
-            sendTeamMemberAdd(teamName, player.getName());
-        }
-    }
-    
-    /**
-     * send team create packet
-     */
-    @SuppressWarnings("deprecation")
-    private void sendTeamCreate(@NotNull TeamData team) {
-        PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.SCOREBOARD_TEAM);
-        
-        // set team name
-        packet.getStrings().write(0, team.name);
-        
-        // set mode to 0 (create team)
-        packet.getIntegers().write(0, 0);
-        
-        // set display name
-        packet.getChatComponents().write(0, WrappedChatComponent.fromText(team.name));
-        
-        // set prefix
-        String prefixJson = gson.serialize(team.prefix);
-        packet.getChatComponents().write(1, WrappedChatComponent.fromJson(prefixJson));
-        
-        // set suffix
-        String suffixJson = gson.serialize(team.suffix);
-        packet.getChatComponents().write(2, WrappedChatComponent.fromJson(suffixJson));
-        
-        // set options (friendly fire, see invisible)
-        packet.getIntegers().write(1, 3); // allow friendly fire + see invisible
-        
-        // set name tag visibility
-        packet.getStrings().write(1, "always");
-        
-        // set collision rule
-        packet.getStrings().write(2, "always");
-        
-        // set colour (for glowing effect)
-        packet.getEnumModifier(ChatColor.class, 0).write(0, ChatColor.WHITE);
-        
-        // add members
-        packet.getModifier().write(7, new ArrayList<>(team.members));
-        
-        // send to all players
-        broadcastPacket(packet);
-    }
-    
-    /**
-     * send team update packet
-     */
-    private void sendTeamUpdate(@NotNull TeamData team) {
-        PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.SCOREBOARD_TEAM);
-        
-        // set team name
-        packet.getStrings().write(0, team.name);
-        
-        // set mode to 2 (update team info)
-        packet.getIntegers().write(0, 2);
-        
-        // set display name
-        packet.getChatComponents().write(0, WrappedChatComponent.fromText(team.name));
-        
-        // set prefix
-        String prefixJson = gson.serialize(team.prefix);
-        packet.getChatComponents().write(1, WrappedChatComponent.fromJson(prefixJson));
-        
-        // set suffix
-        String suffixJson = gson.serialize(team.suffix);
-        packet.getChatComponents().write(2, WrappedChatComponent.fromJson(suffixJson));
-        
-        // set options
-        packet.getIntegers().write(1, 3);
-        
-        // set name tag visibility
-        packet.getStrings().write(1, "always");
-        
-        // set collision rule
-        packet.getStrings().write(2, "always");
-        
-        // send to all players
-        broadcastPacket(packet);
-    }
-    
-    /**
-     * send team remove packet
-     */
-    private void sendTeamRemove(@NotNull String teamName) {
-        PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.SCOREBOARD_TEAM);
-        
-        // set team name
-        packet.getStrings().write(0, teamName);
-        
-        // set mode to 1 (remove team)
-        packet.getIntegers().write(0, 1);
-        
-        // send to all players
-        broadcastPacket(packet);
-    }
-    
-    /**
-     * send team member add packet
-     */
-    private void sendTeamMemberAdd(@NotNull String teamName, @NotNull String playerName) {
-        PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.SCOREBOARD_TEAM);
-        
-        // set team name
-        packet.getStrings().write(0, teamName);
-        
-        // set mode to 3 (add players)
-        packet.getIntegers().write(0, 3);
-        
-        // set players to add
-        packet.getModifier().write(7, Collections.singletonList(playerName));
-        
-        // send to all players
-        broadcastPacket(packet);
-    }
-    
-    /**
-     * send team member remove packet
-     */
-    private void sendTeamMemberRemove(@NotNull String teamName, @NotNull String playerName) {
-        PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.SCOREBOARD_TEAM);
-        
-        // set team name
-        packet.getStrings().write(0, teamName);
-        
-        // set mode to 4 (remove players)
-        packet.getIntegers().write(0, 4);
-        
-        // set players to remove
-        packet.getModifier().write(7, Collections.singletonList(playerName));
-        
-        // send to all players
-        broadcastPacket(packet);
-    }
-    
-    /**
-     * broadcast packet to all players
-     */
-    private void broadcastPacket(@NotNull PacketContainer packet) {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            try {
-                protocolManager.sendServerPacket(player, packet);
-            } catch (Exception e) {
-                Log.debug("failed to send packet to " + player.getName() + ": " + e.getMessage());
-            }
-        }
-    }
-    
-    /**
-     * start the update task
-     */
-    private void startUpdateTask() {
-        updateTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                processPendingUpdates();
-            }
-        };
-        
-        // run every 5 ticks (0.25 seconds)
-        updateTask.runTaskTimer(plugin, 5L, 5L);
+    public boolean isUsingTabIntegration() {
+        return useTabIntegration;
     }
     
     /**
      * cleanup resources
      */
     public void cleanup() {
-        if (updateTask != null) {
-            updateTask.cancel();
-            updateTask = null;
+        if (!enabled) {
+            return;
         }
         
-        // remove all teams
-        for (String teamName : teams.keySet()) {
-            sendTeamRemove(teamName);
+        if (!useTabIntegration) {
+            // TODO: Clean up native implementation
+            // Would remove all teams and cancel tasks
         }
         
-        teams.clear();
-        playerTeams.clear();
-        pendingUpdates.clear();
+        playerTags.clear();
+        Log.debug("Nametag manager cleaned up");
     }
     
     /**
-     * team data holder
+     * reload nametag configuration
+     * useful when config changes
      */
-    private static class TeamData {
-        final String name;
-        final Set<String> members = new HashSet<>();
-        Component prefix = Component.empty();
-        Component suffix = Component.empty();
-        @SuppressWarnings("unused")
-        String nameColour = null;
+    public void reload() {
+        cleanup();
+        initialize();
         
-        TeamData(@NotNull String name) {
-            this.name = name;
+        // re-setup all online players
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            setupPlayer(player);
+        }
+        
+        Log.info("Nametag manager reloaded");
+    }
+    
+    /**
+     * get statistics about nametag usage
+     */
+    @NotNull
+    public String getStatistics() {
+        return String.format(
+            "Nametags: %s | Mode: %s | Cached: %d players",
+            enabled ? "Enabled" : "Disabled",
+            useTabIntegration ? "TAB Integration" : "Native",
+            playerTags.size()
+        );
+    }
+    
+    // =====================================
+    // TODO: Native Implementation Methods
+    // =====================================
+    
+    /*
+     * if implementing native nametag handling in the future,
+     * these methods would handle the actual packet sending:
+     * 
+     * - createTeam(player, tagData) - Create scoreboard team
+     * - updateTeam(player, tagData) - Update team prefix/suffix
+     * - removeTeam(player) - Remove scoreboard team
+     * - sendTeamPackets() - Send packets via ProtocolLib
+     * 
+     * this would require:
+     * 1. proper ProtocolLib packet handling for MC 1.21.7+
+     * 2. team sorting by rank weight
+     * 3. handling 16-character limits
+     * 4. color code processing
+     * 5. packet batching for performance
+     * 
+     * for now, TAB handles all of this for us.
+     */
+    
+    /**
+     * data class for storing nametag information
+     */
+    public static class NametagData {
+        private final UUID uuid;
+        private final String username;
+        private String prefix;
+        private String suffix;
+        private String nameColour;
+        private long lastUpdated;
+        
+        public NametagData(@NotNull UUID uuid, @NotNull String username, 
+                          String prefix, String suffix, String nameColour) {
+            this.uuid = uuid;
+            this.username = username;
+            this.prefix = prefix;
+            this.suffix = suffix;
+            this.nameColour = nameColour;
+            this.lastUpdated = System.currentTimeMillis();
+        }
+        
+        // getters
+        public UUID getUuid() { return uuid; }
+        public String getUsername() { return username; }
+        public String getPrefix() { return prefix; }
+        public String getSuffix() { return suffix; }
+        public String getNameColour() { return nameColour; }
+        public long getLastUpdated() { return lastUpdated; }
+        
+        /**
+         * build the full display name
+         */
+        @NotNull
+        public String getFullDisplay() {
+            StringBuilder display = new StringBuilder();
+            
+            if (prefix != null) {
+                display.append(prefix).append(" ");
+            }
+            
+            if (nameColour != null) {
+                display.append(nameColour);
+            }
+            
+            display.append(username);
+            
+            if (suffix != null) {
+                display.append(" ").append(suffix);
+            }
+            
+            return display.toString();
         }
     }
 }

@@ -7,6 +7,10 @@ import dev.hxrry.hxprefix.api.models.PlayerCustomization;
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+
 import org.bukkit.entity.Player;
 
 import org.jetbrains.annotations.NotNull;
@@ -14,9 +18,15 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * placeholderapi expansion for hxprefix
+ * 
+ * Default placeholders return MiniMessage format (modern)
+ * _legacy suffix returns legacy & format (for VentureChat, etc)
+ * _stripped suffix returns plain text with no formatting
  */
 public class PlaceholderAPIHook extends PlaceholderExpansion {
     private final HxPrefix plugin;
+    private final MiniMessage mm = MiniMessage.miniMessage();
+    private final LegacyComponentSerializer legacy = LegacyComponentSerializer.legacyAmpersand();
     
     public PlaceholderAPIHook(@NotNull HxPrefix plugin) {
         this.plugin = plugin;
@@ -63,28 +73,82 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
         
         // handle different placeholders
         return switch (params.toLowerCase()) {
-            // basic data placeholders
+            // ===== MODERN FORMAT (MiniMessage) - DEFAULT =====
             case "prefix" -> {
                 if (data != null && data.getPrefix() != null) {
-                    yield data.getPrefix();
+                    yield data.getPrefix(); // Return MiniMessage format
                 }
                 yield "";
             }
             
             case "suffix" -> {
                 if (data != null && data.getSuffix() != null) {
-                    yield data.getSuffix();
+                    yield data.getSuffix(); // Return MiniMessage format
                 }
                 yield "";
             }
             
             case "colour", "color" -> {
                 if (data != null && data.getNameColour() != null) {
-                    yield data.getNameColour();
+                    yield data.getNameColour(); // Return MiniMessage format
                 }
                 yield "";
             }
             
+            // ===== LEGACY FORMAT (for VentureChat, older plugins) =====
+            case "prefix_legacy" -> {
+                if (data != null && data.getPrefix() != null) {
+                    Component component = mm.deserialize(data.getPrefix());
+                    yield legacy.serialize(component);
+                }
+                yield "";
+            }
+            
+            case "suffix_legacy" -> {
+                if (data != null && data.getSuffix() != null) {
+                    Component component = mm.deserialize(data.getSuffix());
+                    yield legacy.serialize(component);
+                }
+                yield "";
+            }
+            
+            case "colour_legacy", "color_legacy" -> {
+                if (data != null && data.getNameColour() != null) {
+                    Component component = mm.deserialize(data.getNameColour());
+                    yield legacy.serialize(component);
+                }
+                yield "";
+            }
+            
+            // ===== STRIPPED FORMAT (no colors at all) =====
+            case "prefix_stripped" -> {
+                if (data != null && data.getPrefix() != null) {
+                    Component component = mm.deserialize(data.getPrefix());
+                    String legacyText = legacy.serialize(component);
+                    yield stripColours(legacyText);
+                }
+                yield "";
+            }
+            
+            case "suffix_stripped" -> {
+                if (data != null && data.getSuffix() != null) {
+                    Component component = mm.deserialize(data.getSuffix());
+                    String legacyText = legacy.serialize(component);
+                    yield stripColours(legacyText);
+                }
+                yield "";
+            }
+            
+            case "colour_stripped", "color_stripped" -> {
+                if (data != null && data.getNameColour() != null) {
+                    Component component = mm.deserialize(data.getNameColour());
+                    String legacyText = legacy.serialize(component);
+                    yield stripColours(legacyText);
+                }
+                yield "";
+            }
+            
+            // ===== NICKNAME AND NAME PLACEHOLDERS =====
             case "nickname", "nick" -> {
                 if (data != null && data.getNickname() != null) {
                     yield data.getNickname();
@@ -92,7 +156,6 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
                 yield player.getName();
             }
             
-            // formatted name placeholders
             case "name" -> {
                 // returns the display name (nickname or username)
                 if (data != null && data.getNickname() != null) {
@@ -102,7 +165,7 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
             }
             
             case "formatted_name", "fname" -> {
-                // returns name with colour applied
+                // returns name with colour applied (MiniMessage format)
                 String name = player.getName();
                 if (data != null && data.getNickname() != null) {
                     name = data.getNickname();
@@ -115,8 +178,25 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
                 yield name;
             }
             
+            case "formatted_name_legacy", "fname_legacy" -> {
+                // returns name with colour applied (legacy format)
+                String name = player.getName();
+                if (data != null && data.getNickname() != null) {
+                    name = data.getNickname();
+                }
+                
+                if (data != null && data.getNameColour() != null) {
+                    String formatted = plugin.getConfigManager().getStyleConfig()
+                        .formatWithColour(data.getNameColour(), name);
+                    Component component = mm.deserialize(formatted);
+                    yield legacy.serialize(component);
+                }
+                yield name;
+            }
+            
+            // ===== FULL DISPLAY PLACEHOLDERS =====
             case "display", "full" -> {
-                // returns full display: prefix + coloured name + suffix
+                // returns full display: prefix + coloured name + suffix (MiniMessage format)
                 StringBuilder display = new StringBuilder();
                 
                 if (data != null) {
@@ -144,7 +224,40 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
                 yield display.toString();
             }
             
-            // status placeholders
+            case "display_legacy", "full_legacy" -> {
+                // returns full display in legacy format
+                StringBuilder display = new StringBuilder();
+                
+                if (data != null) {
+                    if (data.getPrefix() != null) {
+                        Component prefix = mm.deserialize(data.getPrefix());
+                        display.append(legacy.serialize(prefix)).append(" ");
+                    }
+                    
+                    String name = data.getNickname() != null ? 
+                        data.getNickname() : player.getName();
+                    
+                    if (data.getNameColour() != null) {
+                        String formatted = plugin.getConfigManager().getStyleConfig()
+                            .formatWithColour(data.getNameColour(), name);
+                        Component colored = mm.deserialize(formatted);
+                        display.append(legacy.serialize(colored));
+                    } else {
+                        display.append(name);
+                    }
+                    
+                    if (data.getSuffix() != null) {
+                        Component suffix = mm.deserialize(data.getSuffix());
+                        display.append(" ").append(legacy.serialize(suffix));
+                    }
+                } else {
+                    display.append(player.getName());
+                }
+                
+                yield display.toString();
+            }
+            
+            // ===== STATUS PLACEHOLDERS =====
             case "has_prefix" -> {
                 yield String.valueOf(data != null && data.getPrefix() != null);
             }
@@ -169,22 +282,7 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
                 yield String.valueOf(data != null && data.hasPendingTagRequest());
             }
             
-            // raw values without formatting
-            case "prefix_raw" -> {
-                if (data != null && data.getPrefix() != null) {
-                    yield stripColours(data.getPrefix());
-                }
-                yield "";
-            }
-            
-            case "suffix_raw" -> {
-                if (data != null && data.getSuffix() != null) {
-                    yield stripColours(data.getSuffix());
-                }
-                yield "";
-            }
-            
-            // rank placeholder
+            // ===== RANK PLACEHOLDER =====
             case "rank" -> {
                 if (plugin.getLuckPermsHook() != null) {
                     yield plugin.getLuckPermsHook().getPrimaryGroup(player);
@@ -192,7 +290,7 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
                 yield "default";
             }
             
-            // permission check placeholders
+            // ===== PERMISSION CHECK PLACEHOLDERS =====
             case "can_use_colours", "can_use_colors" -> {
                 yield String.valueOf(plugin.getConfigManager().getPermissionConfig()
                     .hasPermission(player, "colour"));
@@ -239,11 +337,11 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
      * strip colour codes from text
      */
     private String stripColours(@NotNull String input) {
-        // strip minimessage tags
-        String stripped = input.replaceAll("<[^>]+>", "");
         // strip legacy codes
-        stripped = stripped.replaceAll("&[0-9a-fk-or]", "");
+        String stripped = input.replaceAll("&[0-9a-fk-or]", "");
         stripped = stripped.replaceAll("§[0-9a-fk-or]", "");
+        // strip minimessage tags
+        stripped = stripped.replaceAll("<[^>]+>", "");
         return stripped.trim();
     }
     
@@ -252,17 +350,32 @@ public class PlaceholderAPIHook extends PlaceholderExpansion {
      */
     private void logAvailablePlaceholders() {
         Log.info("available placeholders:");
+        Log.info("  === MODERN FORMAT (MiniMessage) ===");
         Log.info("  %hxprefix_prefix% - player's prefix");
         Log.info("  %hxprefix_suffix% - player's suffix");
         Log.info("  %hxprefix_colour% - player's name colour");
-        Log.info("  %hxprefix_nickname% - player's nickname");
-        Log.info("  %hxprefix_name% - display name (nick or username)");
         Log.info("  %hxprefix_formatted_name% - coloured display name");
         Log.info("  %hxprefix_display% - full display (prefix + name + suffix)");
+        Log.info("");
+        Log.info("  === LEGACY FORMAT (for VentureChat, etc) ===");
+        Log.info("  %hxprefix_prefix_legacy% - prefix with & codes");
+        Log.info("  %hxprefix_suffix_legacy% - suffix with & codes");
+        Log.info("  %hxprefix_colour_legacy% - colour with & codes");
+        Log.info("  %hxprefix_formatted_name_legacy% - name with & codes");
+        Log.info("  %hxprefix_display_legacy% - full display with & codes");
+        Log.info("");
+        Log.info("  === STRIPPED FORMAT (no colors) ===");
+        Log.info("  %hxprefix_prefix_stripped% - prefix without colors");
+        Log.info("  %hxprefix_suffix_stripped% - suffix without colors");
+        Log.info("  %hxprefix_colour_stripped% - colour code stripped");
+        Log.info("");
+        Log.info("  === OTHER PLACEHOLDERS ===");
+        Log.info("  %hxprefix_nickname% - player's nickname");
+        Log.info("  %hxprefix_name% - display name (nick or username)");
+        Log.info("  %hxprefix_rank% - player's rank");
         Log.info("  %hxprefix_has_prefix% - true/false");
         Log.info("  %hxprefix_has_suffix% - true/false");
         Log.info("  %hxprefix_has_colour% - true/false");
         Log.info("  %hxprefix_has_nickname% - true/false");
-        Log.info("  %hxprefix_rank% - player's rank");
     }
 }

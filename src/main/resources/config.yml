@@ -1,3 +1,4 @@
+# == GENERAL SETTINGS ==
 database:
   type: mysql
   mysql:
@@ -28,6 +29,8 @@ animations:
     enabled: true
     speed: 10
 
+# == RANK SETTINGS ==
+
 # Define your ranks and their permissions
 # Rank names MUST match your LuckPerms group names exactly!
 ranks:
@@ -39,15 +42,7 @@ ranks:
     suffix: false
     nickname: false
     
-  vip:
-    colors: true
-    gradients: false
-    rainbow: false
-    prefix: true
-    suffix: true
-    nickname: true
-    
-  vip+:
+  member:
     colors: true
     gradients: true
     rainbow: false
@@ -55,15 +50,7 @@ ranks:
     suffix: true
     nickname: true
     
-  mvp:
-    colors: true
-    gradients: true
-    rainbow: false
-    prefix: true
-    suffix: true
-    nickname: true
-    
-  mvp+:
+  donator:
     colors: true
     gradients: true
     rainbow: true
@@ -87,7 +74,7 @@ ranks:
     suffix: true
     nickname: true
     
-  devoted:
+  patron+:
     colors: true
     gradients: true
     rainbow: true
@@ -96,7 +83,7 @@ ranks:
     nickname: true
     custom-tags: true
     
-  legend:
+  owner:
     colors: true
     gradients: true
     rainbow: true
@@ -105,7 +92,7 @@ ranks:
     nickname: true
     custom-tags: true
 
-# Nickname settings
+# == NICKNAME SETTINGS ==
 nickname:
   min-length: 3
   max-length: 16
@@ -120,14 +107,26 @@ nickname:
     - "server"
     - "console"
 
-# Nametag settings
+# == NAMETAG SETTINGS ==
+
 nametags:
+  # Enable nametag system (set to false if using external plugins)
   enabled: true
-  # Show prefix in nametag
+  
+  # Use TAB plugin for display (recommended)
+  # If true, HxPrefix only manages data and TAB handles display
+  # If false, would use native implementation (not currently available)
+  use-tab-integration: true
+  
+  # These settings are for future native implementation
   show-prefix: true
-  # Show suffix in nametag
   show-suffix: true
-  # Update nametags on join
   update-on-join: true
-  # Delay before updating on join (ticks)
   join-delay: 20
+  
+  # TAB integration settings
+  tab:
+    # Force refresh on changes (may cause flicker)
+    force-refresh: false
+    # Refresh delay in ticks (20 = 1 second)
+    refresh-delay: 10

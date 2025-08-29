@@ -1,178 +1,112 @@
-# Suffix Options Configuration
-# Text that appears after the player name
+# -------------------
+# -- SUFFIX CONFIG --
+# -------------------
 
-# Default values if not specified
-defaults:
-  material: PAPER
-  color: "&f"
-  glow: false
-
-# Suffix options
-suffixes:
-  # Symbols
-  - value: "★"
+# The code expects suffix-options, not suffixes
+suffix-options:
+  # Symbol suffixes
+  star:
+    name: "Star"
+    value: "<gold>★"
     material: GOLD_NUGGET
-    color: "&6&l"
     glow: true
-    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend"]
+    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend", "owner"]
     
-  - value: "✦"
+  diamond:
+    name: "Diamond"
+    value: "<aqua>✦"
     material: DIAMOND
-    color: "&b&l"
     glow: true
-    ranks: ["vip+", "mvp", "mvp+", "patron", "devoted", "legend"]
+    ranks: ["vip+", "mvp", "mvp+", "patron", "devoted", "legend", "owner"]
     
-  - value: "♦"
-    material: EMERALD
-    color: "&a&l"
-    glow: false
-    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend"]
-    
-  - value: "✓"
+  check:
+    name: "Check"
+    value: "<green>✓"
     material: LIME_DYE
-    color: "&a&l"
-    glow: false
-    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend"]
+    ranks: ["*"]
     
-  - value: "✪"
-    material: NETHER_STAR
-    color: "&f&l"
-    glow: true
-    ranks: ["mvp", "mvp+", "devoted", "legend"]
-    
-  - value: "⚡"
+  lightning:
+    name: "Lightning"
+    value: "<yellow>⚡"
     material: BLAZE_ROD
-    color: "&e&l"
     glow: true
-    ranks: ["mvp+", "devoted", "legend"]
+    ranks: ["mvp+", "devoted", "legend", "owner"]
     
-  - value: "✯"
-    material: END_CRYSTAL
-    color: "&d&l"
-    glow: true
-    ranks: ["patron", "devoted", "legend"]
-    
-  - value: "♛"
+  crown:
+    name: "Crown"
+    value: "<gold>♛"
     material: GOLDEN_HELMET
-    color: "&6&l"
     glow: true
-    ranks: ["devoted", "legend"]
+    ranks: ["devoted", "legend", "owner"]
     
-  - value: "⚔"
+  sword:
+    name: "Sword"
+    value: "<gray>⚔"
     material: IRON_SWORD
-    color: "&7&l"
-    glow: false
-    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend"]
+    ranks: ["*"]
     
-  - value: "☣"
-    material: POISONOUS_POTATO
-    color: "&2&l"
-    glow: true
-    ranks: ["mvp", "mvp+", "patron", "devoted", "legend"]
-    
-  # Short tags
-  - value: "PRO"
+  # Text suffixes
+  pro:
+    name: "PRO"
+    value: "<red>[PRO]"
     material: REDSTONE
-    color: "&c&l"
-    glow: false
-    ranks: ["vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend"]
+    ranks: ["vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend", "owner"]
     
-  - value: "GOD"
+  god:
+    name: "GOD"
+    value: "<dark_purple>[GOD]"
     material: BEACON
-    color: "&5&l"
     glow: true
-    ranks: ["mvp+", "devoted", "legend"]
+    ranks: ["mvp+", "devoted", "legend", "owner"]
     
-  - value: "MVP"
-    material: DIAMOND_BLOCK
-    color: "&b&l"
-    glow: true
-    ranks: ["mvp", "mvp+"]
-    
-  - value: "ACE"
-    material: FIREWORK_ROCKET
-    color: "&d&l"
-    glow: false
-    ranks: ["mvp", "mvp+", "patron", "devoted", "legend"]
-    
-  - value: "MAX"
-    material: NETHERITE_INGOT
-    color: "&8&l"
-    glow: true
-    ranks: ["devoted", "legend"]
-    
-  # Fun endings
-  - value: "YT"
+  yt:
+    name: "YouTube"
+    value: "<red>[YT]"
     material: RED_CONCRETE
-    color: "&c&l"
-    glow: false
-    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend", "youtuber"]
+    ranks: ["youtuber", "devoted", "legend", "owner"]
     
-  - value: "TV"
+  tv:
+    name: "Streamer"
+    value: "<purple>[TV]"
     material: PURPLE_CONCRETE
-    color: "&5&l"
-    glow: false
-    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend", "streamer"]
+    ranks: ["streamer", "devoted", "legend", "owner"]
     
-  - value: "GG"
+  gg:
+    name: "GG"
+    value: "<green>[GG]"
     material: LIME_CONCRETE
-    color: "&a&l"
-    glow: false
-    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend"]
+    ranks: ["*"]
     
-  - value: "XD"
-    material: YELLOW_CONCRETE
-    color: "&e&l"
-    glow: false
-    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend"]
-    
-  # Rank indicators
-  - value: "I"
+  # Roman numerals
+  rank1:
+    name: "Rank I"
+    value: "<gray>I"
     material: IRON_INGOT
-    color: "&7&l"
-    glow: false
     ranks: ["vip", "vip+", "supporter"]
     
-  - value: "II"
+  rank2:
+    name: "Rank II"
+    value: "<gold>II"
     material: GOLD_INGOT
-    color: "&6&l"
-    glow: false
     ranks: ["mvp", "patron"]
     
-  - value: "III"
+  rank3:
+    name: "Rank III"
+    value: "<aqua>III"
     material: DIAMOND
-    color: "&b&l"
     glow: true
     ranks: ["mvp+", "devoted"]
     
-  - value: "IV"
+  rank4:
+    name: "Rank IV"
+    value: "<green>IV"
     material: EMERALD
-    color: "&a&l"
     glow: true
     ranks: ["devoted"]
     
-  - value: "V"
+  rank5:
+    name: "Rank V"
+    value: "<light_purple>V"
     material: NETHERITE_INGOT
-    color: "&5&l"
     glow: true
-    ranks: ["legend"]
-
-# Menu Configuration
-menu:
-  title: "&b&lSuffix Selection &7({rank})"
-  size: 54
-  
-  special-slots:
-    reset-button: 49
-    
-  reset-button:
-    material: BARRIER
-    name: "&c&lReset Suffix"
-    lore:
-      - "&7Remove your suffix"
-      - ""
-      - "&cClick to reset!"
-    
-  filler:
-    material: GRAY_STAINED_GLASS_PANE
-    name: " "
+    ranks: ["legend", "owner"]
