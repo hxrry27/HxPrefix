@@ -1,5 +1,6 @@
 package dev.hxrry.hxprefix;
 
+import dev.hxrry.hxcore.HxCore;
 import dev.hxrry.hxcore.utils.Log;
 import dev.hxrry.hxcore.utils.Scheduler;
 
@@ -11,15 +12,12 @@ import dev.hxrry.hxprefix.commands.ColourCommand;
 import dev.hxrry.hxprefix.commands.NickCommand;
 import dev.hxrry.hxprefix.commands.PrefixCommand;
 import dev.hxrry.hxprefix.commands.SuffixCommand;
-import dev.hxrry.hxprefix.commands.TagCommand;
 import dev.hxrry.hxprefix.config.ConfigManager;
 import dev.hxrry.hxprefix.database.DatabaseManager;
 import dev.hxrry.hxprefix.database.DataCache;
 import dev.hxrry.hxprefix.hooks.PlaceholderAPIHook;
 import dev.hxrry.hxprefix.hooks.LuckPermsHook;
 import dev.hxrry.hxprefix.listeners.PlayerListener;
-import dev.hxrry.hxprefix.nametags.NametagManager;
-import dev.hxrry.hxprefix.utils.MigrationHelper;
 
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -27,47 +25,53 @@ import io.papermc.paper.command.brigadier.Commands;
 
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 
 public class HxPrefix extends JavaPlugin {
     private static HxPrefix instance;
     
-    // core comp's
+    // Core components
     private ConfigManager configManager;
     private DatabaseManager databaseManager;
     private DataCache dataCache;
-    private NametagManager nametagManager;
+    private HxCore core;
     
-    // hooks
+    // Hooks
     private LuckPermsHook luckPermsHook;
     private PlaceholderAPIHook placeholderHook;
     
-    // api
+    // API
     private HxPrefixAPI api;
-
-    // migration Helper
-    private MigrationHelper migrationHelper;
     
     @SuppressWarnings("deprecation")
     @Override
     public void onEnable() {
         instance = this;
         
-        // initialize components in some degree of order
         try {
             Log.info("Initializing HxPrefix v" + getDescription().getVersion());
             
-            // shaded hx library's being init'd
+            // Initialize shaded libraries
             Scheduler.init(this);
             Log.init(this);
-            HxGUI.init(this);
 
+            // Initialize HxCore
+            core = new HxCore(this);
+            if (!core.initialize()) {
+                Log.error("Failed to initialize HxCore!");
+                getServer().getPluginManager().disablePlugin(this);
+                return;
+            }
+
+            // Initialize HxGUI
+            HxGUI.init(this);
             Log.info("HxGUI Library initialized successfully");
 
-            // 1. load configurations
+            // Load configurations
             configManager = new ConfigManager(this);
             configManager.loadAll();
             
-            // 2. setup database with retry logic
+            // Setup database
             databaseManager = new DatabaseManager(this);
             if (!databaseManager.initialize()) {
                 Log.error("Failed to connect to database! Check your config.yml");
@@ -75,30 +79,22 @@ public class HxPrefix extends JavaPlugin {
                 return;
             }
             
-            // 3. initialize cache
+            // Initialize cache
             dataCache = new DataCache(this, databaseManager);
-
-            // 3.5. initialize migration helper (has to be post-database)
-            migrationHelper = new MigrationHelper(this);
             
-            // 4. setup hooks
+            // Setup hooks
             setupHooks();
             
-            // 5. initialize nametag manager
-            if (configManager.isNametagsEnabled()) {
-                nametagManager = new NametagManager(this);
-            }
-            
-            // 6. register commands
+            // Register commands
             registerCommands();
 
-            // 7. register listeners
+            // Register listeners
             getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
             
-            // 8. initialize API
+            // Initialize API
             api = new HxPrefixAPI(this);
             
-            // 9. run startup tasks
+            // Run startup tasks
             Scheduler.runTaskLater(this::postStartup, 20L);
             
             Log.info("HxPrefix enabled successfully!");
@@ -114,11 +110,6 @@ public class HxPrefix extends JavaPlugin {
     public void onDisable() {
         Log.info("Disabling HxPrefix...");
         
-        // reverse ordr cleanup
-        if (nametagManager != null) {
-            nametagManager.cleanup();
-        }
-        
         if (placeholderHook != null) {
             placeholderHook.unregister();
         }
@@ -131,23 +122,30 @@ public class HxPrefix extends JavaPlugin {
         if (databaseManager != null) {
             databaseManager.close();
         }
+
+        if (core != null) {
+            core.shutdown();
+        }
         
-        // cancel remainers
+        // Cancel remaining tasks
         getServer().getScheduler().cancelTasks(this);
         
         Log.info("HxPrefix disabled successfully!");
     }
     
     private void setupHooks() {
-        // lp
-       if (getServer().getPluginManager().isPluginEnabled("LuckPerms")) {
-            luckPermsHook = new LuckPermsHook(this); // Pass plugin instance
-            Log.info("Hooked into LuckPerms");
+        // LuckPerms
+        if (getServer().getPluginManager().isPluginEnabled("LuckPerms")) {
+            luckPermsHook = new LuckPermsHook(this);
+            if (!luckPermsHook.init()) {
+                Log.warning("Failed to initialize LuckPerms hook - rank features will be limited.");
+                luckPermsHook = null; // Clear it if init failed
+            }
         } else {
             Log.warning("LuckPerms not found! Rank features will be limited.");
         }
         
-        // placeholderAPI
+        // PlaceholderAPI
         if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             placeholderHook = new PlaceholderAPIHook(this);
             placeholderHook.register();
@@ -160,62 +158,58 @@ public class HxPrefix extends JavaPlugin {
         manager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             final Commands commands = event.registrar();
             
-            // register each command
+            // Register each command
             new AdminCommand(this).register(commands);
             new ColourCommand(this).register(commands);
             new PrefixCommand(this).register(commands);
             new SuffixCommand(this).register(commands);
-            new TagCommand(this).register(commands);
             new NickCommand(this).register(commands);
             
-            Log.info("Registered 7 commands");
+            Log.info("Registered 6 commands");
         });
     }
     
     private void postStartup() {
-        // load all online players into cache
+        // Load all online players into cache
         getServer().getOnlinePlayers().forEach(player -> {
             dataCache.loadPlayer(player.getUniqueId());
-            if (nametagManager != null) {
-                nametagManager.updatePlayer(player);
-            }
         });
         
-        // show stats
+        // Show stats
         Log.info("Loaded " + dataCache.getCacheSize() + " players into cache");
         Log.info("Available colours: " + configManager.getStyleConfig().getColourCount());
         Log.info("Available prefixes: " + configManager.getStyleConfig().getPrefixCount());
         Log.info("Available suffixes: " + configManager.getStyleConfig().getSuffixCount());
     }
     
-    // copmonent getters
+    // Component getters
     public static HxPrefix getInstance() { return instance; }
     public ConfigManager getConfigManager() { return configManager; }
     public DatabaseManager getDatabaseManager() { return databaseManager; }
     public DataCache getDataCache() { return dataCache; }
-    public NametagManager getNametagManager() { return nametagManager; }
     public LuckPermsHook getLuckPermsHook() { return luckPermsHook; }
     public HxPrefixAPI getAPI() { return api; }
-    public MigrationHelper getMigrationHelper() { return migrationHelper; }
+    @NotNull public HxCore getCore() { return core; }
     
     /**
-     * reload the plugin configuration
+     * Reload the plugin configuration
      */
     public void reload() {
         Log.info("Reloading HxPrefix configuration...");
         
-        // reload configs
+        if (dataCache != null) {
+            dataCache.saveAll();
+        }
+        
+        // Reload configs
         configManager.loadAll();
         
-        // clear and rebuild cache
+        // Clear and rebuild cache
         dataCache.clearCache();
         
-        // update all online players
+        // Update all online players
         getServer().getOnlinePlayers().forEach(player -> {
             dataCache.loadPlayer(player.getUniqueId());
-            if (nametagManager != null) {
-                nametagManager.updatePlayer(player);
-            }
         });
         
         Log.info("Configuration reloaded successfully!");

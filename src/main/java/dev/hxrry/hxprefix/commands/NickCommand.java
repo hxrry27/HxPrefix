@@ -1,6 +1,7 @@
 package dev.hxrry.hxprefix.commands;
 
 import dev.hxrry.hxprefix.HxPrefix;
+import dev.hxrry.hxprefix.api.models.PlayerCustomization;
 
 import io.papermc.paper.command.brigadier.Commands;
 
@@ -12,18 +13,12 @@ import org.bukkit.entity.Player;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * command for managing nicknames
  */
 public class NickCommand extends BaseCommand {
-    
-    // cooldown tracking
-    private final Map<UUID, Long> cooldowns = new HashMap<>();
     
     public NickCommand(@NotNull HxPrefix plugin) {
         super(plugin, "nick", null, true);
@@ -104,7 +99,7 @@ public class NickCommand extends BaseCommand {
                 "{nickname}", current);
         } else {
             sendMessage(player, "nickname.not-set");
-            send(player, "<gray>use /hxnick <name> to set a nickname");
+            send(player, "<gray>use /nick <name> to set a nickname");
         }
     }
     
@@ -198,7 +193,7 @@ public class NickCommand extends BaseCommand {
     /**
      * check if nickname is already taken
      */
-    private boolean isNicknameTaken(@NotNull String nickname, @NotNull UUID excludePlayer) {
+    private boolean isNicknameTaken(@NotNull String nickname, @NotNull java.util.UUID excludePlayer) {
         // check online players first
         for (Player online : Bukkit.getOnlinePlayers()) {
             if (online.getUniqueId().equals(excludePlayer)) continue;
@@ -220,7 +215,7 @@ public class NickCommand extends BaseCommand {
     }
     
     /**
-     * check cooldown for nickname changes
+     * check cooldown for nickname changes (now persistent!)
      */
     private boolean checkCooldown(@NotNull Player player) {
         // bypass for staff
@@ -235,34 +230,37 @@ public class NickCommand extends BaseCommand {
             return true; // no cooldown
         }
         
-        UUID uuid = player.getUniqueId();
-        Long lastChange = cooldowns.get(uuid);
+        // Get player data from cache/database
+        PlayerCustomization data = plugin.getAPI().getPlayerData(player);
+        if (data == null) {
+            return true; // shouldn't happen, but allow if no data
+        }
         
-        if (lastChange != null) {
-            long elapsed = System.currentTimeMillis() - lastChange;
-            long remaining = (cooldownSeconds * 1000L) - elapsed;
+        // Check if on cooldown using the persistent timestamp
+        if (data.isOnNicknameCooldown(cooldownSeconds)) {
+            int remaining = data.getRemainingCooldown(cooldownSeconds);
+            int minutes = remaining / 60;
+            int seconds = remaining % 60;
             
-            if (remaining > 0) {
-                int seconds = (int) (remaining / 1000);
-                int minutes = seconds / 60;
-                seconds = seconds % 60;
+            String timeLeft = minutes > 0 ? 
+                minutes + "m " + seconds + "s" : 
+                seconds + "s";
                 
-                String timeLeft = minutes > 0 ? 
-                    minutes + "m " + seconds + "s" : 
-                    seconds + "s";
-                    
-                sendError(player, "please wait " + timeLeft + " before changing your nickname again");
-                return false;
-            }
+            sendError(player, "please wait " + timeLeft + " before changing your nickname again");
+            return false;
         }
         
         return true;
     }
     
     /**
-     * update cooldown timestamp
+     * update cooldown timestamp (now persistent!)
      */
     private void updateCooldown(@NotNull Player player) {
-        cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
+        PlayerCustomization data = plugin.getAPI().getPlayerData(player);
+        if (data != null) {
+            data.setLastNicknameChange(System.currentTimeMillis());
+            plugin.getDataCache().savePlayerData(data);
+        }
     }
 }

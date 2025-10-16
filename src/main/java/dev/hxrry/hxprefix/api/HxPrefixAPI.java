@@ -77,11 +77,6 @@ public class HxPrefixAPI {
         data.setPrefix(event.getNewPrefix());
         plugin.getDataCache().savePlayerData(data);
         
-        // Update nametag
-        if (plugin.getNametagManager() != null) {
-            plugin.getNametagManager().updatePlayer(player);
-        }
-        
         return true;
     }
     
@@ -116,11 +111,6 @@ public class HxPrefixAPI {
         // Update data
         data.setSuffix(event.getNewSuffix());
         plugin.getDataCache().savePlayerData(data);
-        
-        // Update nametag
-        if (plugin.getNametagManager() != null) {
-            plugin.getNametagManager().updatePlayer(player);
-        }
         
         return true;
     }
@@ -157,11 +147,6 @@ public class HxPrefixAPI {
         data.setNameColour(event.getNewColour());
         plugin.getDataCache().savePlayerData(data);
         
-        // Update nametag
-        if (plugin.getNametagManager() != null) {
-            plugin.getNametagManager().updatePlayer(player);
-        }
-        
         return true;
     }
     
@@ -196,11 +181,6 @@ public class HxPrefixAPI {
         // Update data
         data.setNickname(event.getNewNickname());
         plugin.getDataCache().savePlayerData(data);
-        
-        // Update nametag
-        if (plugin.getNametagManager() != null) {
-            plugin.getNametagManager().updatePlayer(player);
-        }
         
         return true;
     }
@@ -326,16 +306,5 @@ public class HxPrefixAPI {
     public boolean hasPermission(@NotNull Player player, @NotNull String feature) {
         return plugin.getConfigManager().getPermissionConfig()
             .hasPermission(player, feature);
-    }
-    
-    /**
-     * Reload a player's data from database
-     * @param player The player
-     */
-    public void reloadPlayer(@NotNull Player player) {
-        plugin.getDataCache().reloadPlayer(player.getUniqueId());
-        if (plugin.getNametagManager() != null) {
-            plugin.getNametagManager().updatePlayer(player);
-        }
     }
 }

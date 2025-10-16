@@ -1,5 +1,9 @@
 package dev.hxrry.hxprefix.database;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.stats.CacheStats;
+
+import dev.hxrry.hxcore.cache.CacheManager;
 import dev.hxrry.hxcore.utils.Log;
 
 import dev.hxrry.hxprefix.HxPrefix;
@@ -10,76 +14,74 @@ import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
- * caching layer for player data
+ * Caching layer for player data using HxCore's CacheManager
+ * 
+ * This class now delegates cache management to HxCore instead of
+ * implementing its own eviction, TTL, and statistics tracking.
+ * 
+ * Uses Caffeine cache (via HxCore) which provides:
+ * - Automatic TTL-based expiration
+ * - Size-based eviction
+ * - Thread-safe operations
+ * - Built-in statistics tracking
  */
+
 public class DataCache {
     private final HxPrefix plugin;
     private final DatabaseManager database;
     
-    // cache storage
-    private final Map<UUID, PlayerCustomization> cache = new ConcurrentHashMap<>();
-    private final Map<UUID, Long> lastAccess = new ConcurrentHashMap<>();
+    // Caffeine cache instance from HxCore
+    private final Cache<UUID, PlayerCustomization> cache;
     
-    // cache settings
-    private final int maxSize;
-    private final long ttlMillis;
-    
-    // cache statistics
-    private final AtomicLong hits = new AtomicLong(0);
-    private final AtomicLong misses = new AtomicLong(0);
-    private final AtomicInteger evictions = new AtomicInteger(0);
-    
-    // executor for async operations
+    // Executor for async operations
     private final ExecutorService executor = Executors.newCachedThreadPool();
-    private ScheduledExecutorService cleaner;
     
     public DataCache(@NotNull HxPrefix plugin, @NotNull DatabaseManager database) {
         this.plugin = plugin;
         this.database = database;
         
-        // load settings from config
-        this.maxSize = plugin.getConfigManager().getCacheMaxSize();
-        this.ttlMillis = plugin.getConfigManager().getCacheTTL() * 1000L;
+        // Get HxCore's cache manager
+        CacheManager cacheManager = plugin.getCore().getCacheManager();
         
-        // start cleanup task
-        startCleanupTask();
+        // Create cache with TTL and max size from config
+        int ttlMinutes = plugin.getConfigManager().getCacheTTL() / 60; // Convert seconds to minutes
+        int maxSize = plugin.getConfigManager().getCacheMaxSize();
+        
+        this.cache = cacheManager.createSimpleCache("player-data", ttlMinutes, maxSize);
+        
+        Log.info("Initialized data cache (TTL: " + ttlMinutes + "m, Max: " + maxSize + ")");
     }
     
     /**
-     * get player data from cache or database
+     * Get player data from cache or database
+     * 
+     * @param uuid Player UUID
+     * @return PlayerCustomization or null if not found
      */
     @Nullable
     public PlayerCustomization getPlayerData(@NotNull UUID uuid) {
-        // check cache first
-        PlayerCustomization cached = cache.get(uuid);
-        
+        // try cache first (Caffeine's getIfPresent returns null if not cached)
+        PlayerCustomization cached = cache.getIfPresent(uuid);
         if (cached != null) {
-            // check if expired
-            Long lastAccessTime = lastAccess.get(uuid);
-            if (lastAccessTime != null && (System.currentTimeMillis() - lastAccessTime) < ttlMillis) {
-                hits.incrementAndGet();
-                lastAccess.put(uuid, System.currentTimeMillis());
-                return cached;
-            }
-            
-            // expired - remove from cache
-            cache.remove(uuid);
-            lastAccess.remove(uuid);
-            evictions.incrementAndGet();
+            Log.debug("Cache HIT for " + uuid);
+            return cached;
         }
         
         // cache miss - load from database
-        misses.incrementAndGet();
+        Log.debug("Cache MISS for " + uuid);
         PlayerCustomization data = database.loadPlayerData(uuid);
         
         if (data != null) {
-            putInCache(data);
+            cache.put(uuid, data);
         }
         
         return data;
@@ -87,20 +89,23 @@ public class DataCache {
     
     /**
      * get or create player data
+     * 
+     * @param uuid Player UUID
+     * @return PlayerCustomization (never null)
      */
     @NotNull
     public PlayerCustomization getOrCreatePlayerData(@NotNull UUID uuid) {
         PlayerCustomization data = getPlayerData(uuid);
         
         if (data == null) {
-            // get username from bukkit
+            // Get username from Bukkit
             String username = Bukkit.getOfflinePlayer(uuid).getName();
             if (username == null) {
                 username = "Unknown";
             }
             
             data = new PlayerCustomization(uuid, username);
-            putInCache(data);
+            cache.put(uuid, data);
         }
         
         return data;
@@ -108,10 +113,13 @@ public class DataCache {
     
     /**
      * save player data to cache and database
+     * 
+     * @param data PlayerCustomization to save
+     * @return CompletableFuture that completes when save is done
      */
     public CompletableFuture<Boolean> savePlayerData(@NotNull PlayerCustomization data) {
         // update cache immediately
-        putInCache(data);
+        cache.put(data.getUuid(), data);
         
         // save to database async
         return CompletableFuture.supplyAsync(() -> 
@@ -120,88 +128,58 @@ public class DataCache {
     }
     
     /**
-     * load player data async
+     * load player data asynchronously
+     * 
+     * @param uuid Player UUID
+     * @return CompletableFuture with PlayerCustomization
      */
     public CompletableFuture<PlayerCustomization> loadPlayer(@NotNull UUID uuid) {
         // check cache first
-        PlayerCustomization cached = cache.get(uuid);
+        PlayerCustomization cached = cache.getIfPresent(uuid);
         if (cached != null) {
-            Long lastAccessTime = lastAccess.get(uuid);
-            if (lastAccessTime != null && (System.currentTimeMillis() - lastAccessTime) < ttlMillis) {
-                return CompletableFuture.completedFuture(cached);
-            }
+            return CompletableFuture.completedFuture(cached);
         }
         
         // load from database async
         return CompletableFuture.supplyAsync(() -> {
             PlayerCustomization data = database.loadPlayerData(uuid);
             if (data != null) {
-                putInCache(data);
+                cache.put(uuid, data);
             }
             return data;
         }, executor);
     }
     
     /**
-     * reload player data from database
+     * reload player data from database (invalidate cache)
+     * 
+     * @param uuid Player UUID
      */
     public void reloadPlayer(@NotNull UUID uuid) {
-        // remove from cache to force reload
-        cache.remove(uuid);
-        lastAccess.remove(uuid);
+        // invalidate cache entry
+        cache.invalidate(uuid);
         
         // load fresh from database
         loadPlayer(uuid);
     }
     
     /**
-     * put data in cache
-     */
-    private void putInCache(@NotNull PlayerCustomization data) {
-        // check cache size
-        if (cache.size() >= maxSize) {
-            evictOldest();
-        }
-        
-        cache.put(data.getUuid(), data);
-        lastAccess.put(data.getUuid(), System.currentTimeMillis());
-    }
-    
-    /**
-     * evict oldest entry from cache
-     */
-    private void evictOldest() {
-        if (cache.isEmpty()) return;
-        
-        // find oldest entry
-        UUID oldest = null;
-        long oldestTime = System.currentTimeMillis();
-        
-        for (Map.Entry<UUID, Long> entry : lastAccess.entrySet()) {
-            if (entry.getValue() < oldestTime) {
-                oldest = entry.getKey();
-                oldestTime = entry.getValue();
-            }
-        }
-        
-        if (oldest != null) {
-            cache.remove(oldest);
-            lastAccess.remove(oldest);
-            evictions.incrementAndGet();
-            
-            Log.debug("evicted " + oldest + " from cache (oldest)");
-        }
-    }
-    
-    /**
      * save all cached data to database
      */
     public void saveAll() {
-        Log.info("saving " + cache.size() + " cached players to database...");
+        // get all cached entries
+        var allEntries = cache.asMap();
+        
+        if (allEntries.isEmpty()) {
+            Log.debug("No cached data to save");
+            return;
+        }
+        
+        Log.info("Saving " + allEntries.size() + " cached players to database...");
         
         List<CompletableFuture<Boolean>> futures = new ArrayList<>();
         
-        for (PlayerCustomization data : cache.values()) {
+        for (PlayerCustomization data : allEntries.values()) {
             futures.add(CompletableFuture.supplyAsync(() -> 
                 database.savePlayerData(data), executor
             ));
@@ -214,94 +192,30 @@ public class DataCache {
         
         try {
             allFutures.get(10, TimeUnit.SECONDS);
-            Log.info("saved all cached data successfully");
+            Log.info("Saved all cached data successfully");
         } catch (Exception e) {
-            Log.error("failed to save some cached data", e);
+            Log.error("Failed to save some cached data", e);
         }
     }
     
     /**
-     * clear the cache
+     * clear the entire cache
      */
     public void clearCache() {
-        cache.clear();
-        lastAccess.clear();
-        hits.set(0);
-        misses.set(0);
-        evictions.set(0);
-        
-        Log.info("cache cleared");
-    }
-    
-    /**
-     * start cleanup task
-     */
-    private void startCleanupTask() {
-        cleaner = Executors.newSingleThreadScheduledExecutor();
-        
-        // run cleanup every minute
-        cleaner.scheduleAtFixedRate(() -> {
-            int removed = 0;
-            long now = System.currentTimeMillis();
-            
-            // remove expired entries
-            Iterator<Map.Entry<UUID, Long>> iterator = lastAccess.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<UUID, Long> entry = iterator.next();
-                
-                if ((now - entry.getValue()) > ttlMillis) {
-                    cache.remove(entry.getKey());
-                    iterator.remove();
-                    removed++;
-                }
-            }
-            
-            if (removed > 0) {
-                evictions.addAndGet(removed);
-                Log.debug("cleaned up " + removed + " expired cache entries");
-            }
-            
-            // log statistics periodically
-            if (plugin.getConfigManager().isDebugMode()) {
-                logStatistics();
-            }
-            
-        }, 60, 60, TimeUnit.SECONDS);
-    }
-    
-    /**
-     * log cache statistics
-     */
-    private void logStatistics() {
-        long totalRequests = hits.get() + misses.get();
-        if (totalRequests == 0) return;
-        
-        double hitRate = (hits.get() * 100.0) / totalRequests;
-        
-        Log.debug("cache stats: " + cache.size() + " entries, " +
-                 String.format("%.1f%%", hitRate) + " hit rate, " +
-                 evictions.get() + " evictions");
+        cache.invalidateAll();
+        Log.info("Cache cleared");
     }
     
     /**
      * cleanup resources
      */
     public void cleanup() {
-        // save all data
+        Log.info("Cleaning up data cache...");
+        
+        // save all data before cleanup
         saveAll();
         
-        // shutdown executors
-        if (cleaner != null) {
-            cleaner.shutdown();
-            try {
-                if (!cleaner.awaitTermination(5, TimeUnit.SECONDS)) {
-                    cleaner.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                cleaner.shutdownNow();
-            }
-        }
-        
+        // Shutdown executor
         executor.shutdown();
         try {
             if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -309,70 +223,91 @@ public class DataCache {
             }
         } catch (InterruptedException e) {
             executor.shutdownNow();
+            Thread.currentThread().interrupt();
         }
         
         // clear cache
-        clearCache();
+        cache.invalidateAll();
+        
+        Log.info("Data cache cleaned up");
     }
     
-    // statistics methods
+    // ===== STATISTICS METHODS =====
     
     /**
-     * get cache size
+     * get current cache size
+     * 
+     * @return number of entries in cache
      */
     public int getCacheSize() {
-        return cache.size();
+        return (int) cache.estimatedSize();
     }
     
     /**
      * get cache hit rate
+     * 
+     * @return hit rate as percentage (0-100)
      */
     public double getHitRate() {
-        long total = hits.get() + misses.get();
+        CacheStats stats = cache.stats();
+        long hits = stats.hitCount();
+        long misses = stats.missCount();
+        long total = hits + misses;
+        
         if (total == 0) return 0;
-        return (hits.get() * 100.0) / total;
+        return (hits * 100.0) / total;
     }
     
     /**
-     * get total hits
+     * get total cache hits
+     * 
+     * @return number of cache hits
      */
     public long getHits() {
-        return hits.get();
+        return cache.stats().hitCount();
     }
     
     /**
-     * get total misses
+     * get total cache misses
+     * 
+     * @return number of cache misses
      */
     public long getMisses() {
-        return misses.get();
+        return cache.stats().missCount();
     }
     
     /**
      * get total evictions
+     * 
+     * @return number of cache evictions
      */
-    public int getEvictions() {
-        return evictions.get();
+    public long getEvictions() {
+        return cache.stats().evictionCount();
     }
     
     /**
-     * check if player is cached
+     * check if a player is currently cached
+     * 
+     * @param uuid Player UUID
+     * @return true if player is in cache
      */
     public boolean isCached(@NotNull UUID uuid) {
-        return cache.containsKey(uuid);
+        return cache.getIfPresent(uuid) != null;
     }
     
     /**
-     * warm up cache with online players
+     * warm up cache with all online players
+     * useful at startup to pre-load data
      */
     public void warmUp() {
-        Log.info("warming up cache with online players...");
+        Log.info("Warming up cache with online players...");
         
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         
         for (var player : Bukkit.getOnlinePlayers()) {
             futures.add(loadPlayer(player.getUniqueId()).thenAccept(data -> {
                 if (data == null) {
-                    // create new data for player
+                    // Create new data for player
                     data = new PlayerCustomization(player.getUniqueId(), player.getName());
                     savePlayerData(data);
                 }
@@ -380,6 +315,24 @@ public class DataCache {
         }
         
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-            .thenRun(() -> Log.info("cache warmed up with " + futures.size() + " players"));
+            .thenRun(() -> Log.info("Cache warmed up with " + futures.size() + " players"));
+    }
+    
+    /**
+     * Get cache statistics as a formatted string
+     * 
+     * @return statistics summary
+     */
+    @NotNull
+    public String getStatistics() {
+        CacheStats stats = cache.stats();
+        return String.format(
+            "Cache: %d entries | Hit Rate: %.1f%% | Hits: %d | Misses: %d | Evictions: %d",
+            getCacheSize(),
+            getHitRate(),
+            stats.hitCount(),
+            stats.missCount(),
+            stats.evictionCount()
+        );
     }
 }

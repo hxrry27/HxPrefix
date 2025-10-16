@@ -17,19 +17,22 @@ public class PlayerCustomization {
     private String suffix;
     private String customTagRequest; // pending custom tag if any
     private long lastUpdated;
+    private long lastNicknameChange; // cooldown tracking
     
     // constructor for new players
     public PlayerCustomization(@NotNull UUID uuid, @NotNull String username) {
         this.uuid = uuid;
         this.username = username;
         this.lastUpdated = System.currentTimeMillis();
+        this.lastNicknameChange = 0; // never changed
     }
     
     // full constructor for loading from database
     public PlayerCustomization(@NotNull UUID uuid, @NotNull String username, 
                               @Nullable String nickname, @Nullable String nameColour,
                               @Nullable String prefix, @Nullable String suffix,
-                              @Nullable String customTagRequest, long lastUpdated) {
+                              @Nullable String customTagRequest, long lastUpdated,
+                              long lastNicknameChange) {
         this.uuid = uuid;
         this.username = username;
         this.nickname = nickname;
@@ -38,6 +41,7 @@ public class PlayerCustomization {
         this.suffix = suffix;
         this.customTagRequest = customTagRequest;
         this.lastUpdated = lastUpdated;
+        this.lastNicknameChange = lastNicknameChange;
     }
     
     // getters
@@ -80,6 +84,10 @@ public class PlayerCustomization {
         return lastUpdated; 
     }
     
+    public long getLastNicknameChange() {
+        return lastNicknameChange;
+    }
+    
     // setters - all update the timestamp
     public void setUsername(@NotNull String username) {
         this.username = username;
@@ -111,6 +119,11 @@ public class PlayerCustomization {
         this.lastUpdated = System.currentTimeMillis();
     }
     
+    public void setLastNicknameChange(long timestamp) {
+        this.lastNicknameChange = timestamp;
+        this.lastUpdated = System.currentTimeMillis();
+    }
+    
     // utility methods
     
     /**
@@ -137,6 +150,41 @@ public class PlayerCustomization {
     }
     
     /**
+     * check if player is on cooldown for nickname changes
+     * 
+     * @param cooldownSeconds the cooldown duration in seconds
+     * @return true if on cooldown, false if can change
+     */
+    public boolean isOnNicknameCooldown(int cooldownSeconds) {
+        if (cooldownSeconds <= 0 || lastNicknameChange == 0) {
+            return false;
+        }
+        
+        long elapsed = System.currentTimeMillis() - lastNicknameChange;
+        long cooldownMs = cooldownSeconds * 1000L;
+        
+        return elapsed < cooldownMs;
+    }
+    
+    /**
+     * get remaining cooldown time in seconds
+     * 
+     * @param cooldownSeconds the cooldown duration in seconds
+     * @return remaining seconds, or 0 if no cooldown
+     */
+    public int getRemainingCooldown(int cooldownSeconds) {
+        if (cooldownSeconds <= 0 || lastNicknameChange == 0) {
+            return 0;
+        }
+        
+        long elapsed = System.currentTimeMillis() - lastNicknameChange;
+        long cooldownMs = cooldownSeconds * 1000L;
+        long remaining = cooldownMs - elapsed;
+        
+        return remaining > 0 ? (int) (remaining / 1000) : 0;
+    }
+    
+    /**
      * clear all customizations (reset to default)
      */
     public void clearAll() {
@@ -146,6 +194,7 @@ public class PlayerCustomization {
         this.suffix = null;
         this.customTagRequest = null;
         this.lastUpdated = System.currentTimeMillis();
+        // Note: don't reset lastNicknameChange - cooldown persists
     }
     
     /**
@@ -155,7 +204,7 @@ public class PlayerCustomization {
     public PlayerCustomization copy() {
         return new PlayerCustomization(
             uuid, username, nickname, nameColour, 
-            prefix, suffix, customTagRequest, lastUpdated
+            prefix, suffix, customTagRequest, lastUpdated, lastNicknameChange
         );
     }
     
@@ -169,6 +218,7 @@ public class PlayerCustomization {
             ", prefix='" + prefix + '\'' +
             ", suffix='" + suffix + '\'' +
             ", hasTagRequest=" + (customTagRequest != null) +
+            ", lastNicknameChange=" + lastNicknameChange +
             '}';
     }
     
@@ -184,11 +234,13 @@ public class PlayerCustomization {
         private String suffix;
         private String customTagRequest;
         private long lastUpdated;
+        private long lastNicknameChange;
         
         public Builder(@NotNull UUID uuid, @NotNull String username) {
             this.uuid = uuid;
             this.username = username;
             this.lastUpdated = System.currentTimeMillis();
+            this.lastNicknameChange = 0;
         }
         
         public Builder nickname(String nickname) {
@@ -221,10 +273,15 @@ public class PlayerCustomization {
             return this;
         }
         
+        public Builder lastNicknameChange(long timestamp) {
+            this.lastNicknameChange = timestamp;
+            return this;
+        }
+        
         public PlayerCustomization build() {
             return new PlayerCustomization(
                 uuid, username, nickname, nameColour,
-                prefix, suffix, customTagRequest, lastUpdated
+                prefix, suffix, customTagRequest, lastUpdated, lastNicknameChange
             );
         }
     }

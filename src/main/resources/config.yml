@@ -11,8 +11,9 @@ database:
 
 # Cache settings (in milliseconds)
 cache:
-  player-data-ttl: 30000  # 30 seconds
-  permission-ttl: 5000    # 5 seconds
+  ttl-seconds: 300        # 5 minutes (more reasonable)
+  max-size: 1000
+  permission-ttl: 5    # 5 seconds
 
 # Default values
 defaults:

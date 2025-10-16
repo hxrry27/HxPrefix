@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * handles all message configuration and formatting
+ * Handles all message configuration and formatting
  */
 public class MessagesConfig {
     @SuppressWarnings("unused")
@@ -28,9 +28,9 @@ public class MessagesConfig {
     private FileConfiguration config;
     private final MiniMessage mm = MiniMessage.miniMessage();
     
-    // cache processed messages
+    // Cache processed messages
     private final Map<String, String> messageCache = new HashMap<>();
-    private String prefix;
+    private String pluginPrefix;
     
     public MessagesConfig(@NotNull HxPrefix plugin, @NotNull File file) {
         this.plugin = plugin;
@@ -38,56 +38,56 @@ public class MessagesConfig {
     }
     
     /**
-     * load messages from file
+     * Load messages from file
      */
     public void load() {
         config = YamlConfiguration.loadConfiguration(file);
         messageCache.clear();
         
-        // load prefix
-        prefix = config.getString("prefix", "<gray>[<gradient:#00ff00:#00ffff>HxPrefix</gradient>]</gray> ");
+        // Load plugin prefix
+        pluginPrefix = config.getString("plugin_prefix", "<gray>[<gradient:#00ff00:#00ffff>HxPrefix</gradient>]</gray> ");
         
-        // validate messages exist
+        // Validate messages exist
         validateMessages();
         
-        Log.debug("loaded " + countMessages() + " messages");
+        Log.debug("Loaded " + countMessages() + " messages");
     }
     
     /**
-     * get a message by key
+     * Get a message by key
      */
     @NotNull
     public String getMessage(@NotNull String key) {
-        // check cache first
+        // Check cache first
         if (messageCache.containsKey(key)) {
             return messageCache.get(key);
         }
         
-        // load from config
+        // Load from config
         String message = config.getString(key);
         if (message == null) {
-            Log.warning("missing message: " + key);
-            message = "<red>missing message: " + key;
+            Log.warning("Missing message: " + key);
+            message = "<red>Missing message: " + key;
         }
         
-        // process message (add prefix if needed)
-        if (!key.startsWith("prefix") && shouldHavePrefix(key)) {
-            message = prefix + message;
+        // Process message (add plugin prefix if needed)
+        if (shouldHavePrefix(key)) {
+            message = pluginPrefix + message;
         }
         
-        // cache it
+        // Cache it
         messageCache.put(key, message);
         return message;
     }
     
     /**
-     * get a message with replacements
+     * Get a message with replacements
      */
     @NotNull
     public String getMessage(@NotNull String key, @NotNull String... replacements) {
         String message = getMessage(key);
         
-        // apply replacements (format: key, value, key, value...)
+        // Apply replacements (format: key, value, key, value...)
         for (int i = 0; i < replacements.length - 1; i += 2) {
             String placeholder = replacements[i];
             String value = replacements[i + 1];
@@ -98,7 +98,7 @@ public class MessagesConfig {
     }
     
     /**
-     * get a message as a component
+     * Get a message as a component
      */
     @NotNull
     public Component getComponent(@NotNull String key) {
@@ -106,7 +106,7 @@ public class MessagesConfig {
     }
     
     /**
-     * get a message as a component with replacements
+     * Get a message as a component with replacements
      */
     @NotNull
     public Component getComponent(@NotNull String key, @NotNull TagResolver... resolvers) {
@@ -114,11 +114,11 @@ public class MessagesConfig {
     }
     
     /**
-     * get a message with placeholder replacements
+     * Get a message with placeholder replacements
      */
     @NotNull
     public Component getComponent(@NotNull String key, @NotNull String... replacements) {
-        // convert string replacements to tag resolvers
+        // Convert string replacements to tag resolvers
         TagResolver[] resolvers = new TagResolver[replacements.length / 2];
         for (int i = 0, j = 0; i < replacements.length - 1; i += 2, j++) {
             String placeholder = replacements[i].replace("{", "").replace("}", "");
@@ -130,45 +130,45 @@ public class MessagesConfig {
     }
     
     /**
-     * get the prefix
+     * Get the plugin prefix
      */
     @NotNull
     public String getPrefix() {
-        return prefix;
+        return pluginPrefix;
     }
     
     /**
-     * check if a message key should have the prefix
+     * Check if a message key should have the plugin prefix added
      */
     private boolean shouldHavePrefix(@NotNull String key) {
-        // don't add prefix to certain message types
-        if (key.startsWith("error.") || 
-            key.startsWith("usage.") ||
-            key.contains(".current") ||
-            key.contains(".status")) {
+        // Don't add prefix to certain message categories
+        if (key.equals("prefix")) {
+            // "prefix" is the plugin prefix itself, not a message
             return false;
         }
         
-        // check config for prefix setting
-        return config.getBoolean("use-prefix", true);
+        if (key.startsWith("gui.") || 
+            key.endsWith(".current") ||
+            key.endsWith(".not-set") ||
+            key.startsWith("usage.")) {
+            return false;
+        }
+        
+        // All other messages get the prefix
+        return true;
     }
     
     /**
-     * validate that required messages exist
+     * Validate that required messages exist
      */
     private void validateMessages() {
-        // check for required message keys
+        // Check for required message keys
         String[] required = {
-            "error.no-permission",
-            "error.player-only",
-            "error.no-colour-permission",
-            "error.no-prefix-permission",
-            "error.no-suffix-permission",
-            "error.no-nickname-permission",
-            "error.no-tag-permission",
+            "permissions.no-permission",
+            "permissions.no-permission-rank",
             
-            "colour.changed",
-            "colour.removed",
+            "color.changed",
+            "color.reset",
             
             "prefix.changed",
             "prefix.removed",
@@ -179,84 +179,69 @@ public class MessagesConfig {
             "nickname.changed",
             "nickname.removed",
             "nickname.current",
-            "nickname.not-set",
-            
-            "tag.submitted",
-            "tag.cancelled",
-            "tag.status.pending",
-            "tag.status.active",
-            "tag.status.none"
+            "nickname.invalid",
+            "nickname.blocked"
         };
         
         int missing = 0;
         for (String key : required) {
             if (!config.contains(key)) {
-                Log.warning("missing required message: " + key);
+                Log.warning("Missing required message: " + key);
                 missing++;
                 
-                // set a default
+                // Set a default
                 config.set(key, getDefaultMessage(key));
             }
         }
         
         if (missing > 0) {
-            Log.warning("added " + missing + " missing messages with defaults");
+            Log.warning("Added " + missing + " missing messages with defaults");
             saveConfig();
         }
     }
     
     /**
-     * get a default message for a key
+     * Get a default message for a key
      */
     @NotNull
     private String getDefaultMessage(@NotNull String key) {
-        // provide sensible defaults
+        // Provide sensible defaults
         return switch (key) {
-            case "error.no-permission" -> "<red>you don't have permission to do that!";
-            case "error.player-only" -> "<red>this command can only be used by players!";
-            case "error.no-colour-permission" -> "<red>your rank ({rank}) doesn't have access to colours!";
-            case "error.no-prefix-permission" -> "<red>your rank ({rank}) doesn't have access to prefixes!";
-            case "error.no-suffix-permission" -> "<red>your rank ({rank}) doesn't have access to suffixes!";
-            case "error.no-nickname-permission" -> "<red>your rank ({rank}) doesn't have access to nicknames!";
-            case "error.no-tag-permission" -> "<red>custom tags are only available for devoted rank and above!";
+            case "permissions.no-permission" -> "<red>You don't have permission to use this command!";
+            case "permissions.no-permission-rank" -> "<red>Your rank ({rank}) doesn't have access to this feature!";
             
-            case "colour.changed" -> "<green>your colour has been updated!";
-            case "colour.removed" -> "<yellow>your colour has been removed!";
+            case "color.changed" -> "<green>Your name color has been updated!";
+            case "color.reset" -> "<yellow>Your name color has been reset!";
             
-            case "prefix.changed" -> "<green>your prefix has been set to {prefix}!";
-            case "prefix.removed" -> "<yellow>your prefix has been removed!";
+            case "prefix.changed" -> "<green>Your prefix has been set to: {value}";
+            case "prefix.removed" -> "<yellow>Your prefix has been removed!";
             
-            case "suffix.changed" -> "<green>your suffix has been set to {suffix}!";
-            case "suffix.removed" -> "<yellow>your suffix has been removed!";
+            case "suffix.changed" -> "<green>Your suffix has been set to: {value}";
+            case "suffix.removed" -> "<yellow>Your suffix has been removed!";
             
-            case "nickname.changed" -> "<green>your nickname has been set to {nickname}!";
-            case "nickname.removed" -> "<yellow>your nickname has been removed!";
-            case "nickname.current" -> "<gray>your current nickname is: <white>{nickname}";
-            case "nickname.not-set" -> "<gray>you don't have a nickname set";
+            case "nickname.changed" -> "<green>Your nickname has been set to: {value}";
+            case "nickname.removed" -> "<yellow>Your nickname has been removed!";
+            case "nickname.current" -> "<gray>Your current nickname is: <white>{value}";
+            case "nickname.invalid" -> "<red>Nickname must be alphanumeric and {min}-{max} characters!";
+            case "nickname.blocked" -> "<red>That nickname is not allowed!";
             
-            case "tag.submitted" -> "<green>your tag request for '{tag}' has been submitted!";
-            case "tag.cancelled" -> "<yellow>your tag request for '{tag}' has been cancelled!";
-            case "tag.status.pending" -> "<yellow>you have a pending request for '{tag}' ({days} days old)";
-            case "tag.status.active" -> "<green>your current custom tag is: {tag}";
-            case "tag.status.none" -> "<gray>you don't have any tag requests";
-            
-            default -> "<red>missing message: " + key;
+            default -> "<red>Missing message: " + key;
         };
     }
     
     /**
-     * save the config file
+     * Save the config file
      */
     private void saveConfig() {
         try {
             config.save(file);
         } catch (Exception e) {
-            Log.error("failed to save messages.yml", e);
+            Log.error("Failed to save messages.yml", e);
         }
     }
     
     /**
-     * count total messages
+     * Count total messages
      */
     private int countMessages() {
         int count = 0;
@@ -269,7 +254,7 @@ public class MessagesConfig {
     }
     
     /**
-     * reload messages
+     * Reload messages
      */
     public void reload() {
         load();

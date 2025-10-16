@@ -92,7 +92,7 @@ public class SuffixCommand extends BaseCommand {
      * open the suffix selection menu
      */
     private void openSuffixMenu(@NotNull Player player) {
-        new SuffixSelectionMenu(plugin, player).open(player);
+        new SuffixSelectionMenu(plugin, player).open();
     }
     
     /**

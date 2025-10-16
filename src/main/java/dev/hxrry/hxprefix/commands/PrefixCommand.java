@@ -92,7 +92,7 @@ public class PrefixCommand extends BaseCommand {
      * open the prefix selection menu
      */
     private void openPrefixMenu(@NotNull Player player) {
-        new PrefixSelectionMenu(plugin, player).open(player);
+        new PrefixSelectionMenu(plugin, player).open();
     }
     
     /**

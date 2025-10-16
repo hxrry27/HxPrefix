@@ -1,17 +1,13 @@
 package dev.hxrry.hxprefix.commands;
 
 import dev.hxrry.hxcore.utils.Log;
-import dev.hxrry.hxcore.utils.Scheduler;
 
 import dev.hxrry.hxprefix.HxPrefix;
-import dev.hxrry.hxprefix.api.models.CustomTagRequest;
 import dev.hxrry.hxprefix.api.models.PlayerCustomization;
-import dev.hxrry.hxprefix.gui.menus.TagManagementMenu;
 
 import io.papermc.paper.command.brigadier.Commands;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -19,11 +15,8 @@ import org.bukkit.entity.Player;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-
 /**
- * admin command for managing the plugin
+ * Admin command for managing the plugin
  */
 public class AdminCommand extends BaseCommand {
     
@@ -37,7 +30,6 @@ public class AdminCommand extends BaseCommand {
             Commands.literal(name)
                 .requires(source -> source.getSender().hasPermission(permission))
                 .executes(ctx -> {
-                    // show help with no args
                     showHelp(ctx.getSource().getSender());
                     return 1;
                 })
@@ -48,64 +40,104 @@ public class AdminCommand extends BaseCommand {
                         return 1;
                     })
                 )
-                // tags subcommand (manage tag requests)
-                .then(Commands.literal("tags")
-                    .executes(ctx -> {
-                        CommandSender sender = ctx.getSource().getSender();
-                        if (sender instanceof Player player) {
-                            openTagManagement(player);
-                        } else {
-                            listPendingTags(sender);
-                        }
-                        return 1;
-                    })
-                    .then(Commands.literal("approve")
-                        .then(Commands.argument("id", IntegerArgumentType.integer(1))
-                            .executes(ctx -> {
-                                int id = ctx.getArgument("id", Integer.class);
-                                approveTag(ctx.getSource().getSender(), id);
-                                return 1;
-                            })
-                        )
-                    )
-                    .then(Commands.literal("deny")
-                        .then(Commands.argument("id", IntegerArgumentType.integer(1))
-                            .then(Commands.argument("reason", StringArgumentType.greedyString())
+                // set subcommand
+                .then(Commands.literal("set")
+                    .then(Commands.argument("player", StringArgumentType.word())
+                        .suggests((ctx, builder) -> {
+                            Bukkit.getOnlinePlayers().forEach(p -> builder.suggest(p.getName()));
+                            return builder.buildFuture();
+                        })
+                        .then(Commands.literal("prefix")
+                            .then(Commands.argument("value", StringArgumentType.greedyString())
                                 .executes(ctx -> {
-                                    int id = ctx.getArgument("id", Integer.class);
-                                    String reason = ctx.getArgument("reason", String.class);
-                                    denyTag(ctx.getSource().getSender(), id, reason);
+                                    String player = ctx.getArgument("player", String.class);
+                                    String value = ctx.getArgument("value", String.class);
+                                    setPlayerData(ctx.getSource().getSender(), player, "prefix", value);
+                                    return 1;
+                                })
+                            )
+                        )
+                        .then(Commands.literal("suffix")
+                            .then(Commands.argument("value", StringArgumentType.greedyString())
+                                .executes(ctx -> {
+                                    String player = ctx.getArgument("player", String.class);
+                                    String value = ctx.getArgument("value", String.class);
+                                    setPlayerData(ctx.getSource().getSender(), player, "suffix", value);
+                                    return 1;
+                                })
+                            )
+                        )
+                        .then(Commands.literal("nickname")
+                            .then(Commands.argument("value", StringArgumentType.greedyString())
+                                .executes(ctx -> {
+                                    String player = ctx.getArgument("player", String.class);
+                                    String value = ctx.getArgument("value", String.class);
+                                    setPlayerData(ctx.getSource().getSender(), player, "nickname", value);
+                                    return 1;
+                                })
+                            )
+                        )
+                        .then(Commands.literal("namecolour")
+                            .then(Commands.argument("value", StringArgumentType.greedyString())
+                                .executes(ctx -> {
+                                    String player = ctx.getArgument("player", String.class);
+                                    String value = ctx.getArgument("value", String.class);
+                                    setPlayerData(ctx.getSource().getSender(), player, "namecolour", value);
                                     return 1;
                                 })
                             )
                         )
                     )
                 )
-                // reset subcommand (clear player data)
-                .then(Commands.literal("reset")
+                // clear subcommand
+                .then(Commands.literal("clear")
                     .then(Commands.argument("player", StringArgumentType.word())
                         .suggests((ctx, builder) -> {
-                            // suggest online players
-                            Bukkit.getOnlinePlayers().forEach(p -> 
-                                builder.suggest(p.getName())
-                            );
+                            Bukkit.getOnlinePlayers().forEach(p -> builder.suggest(p.getName()));
                             return builder.buildFuture();
                         })
-                        .executes(ctx -> {
-                            String playerName = ctx.getArgument("player", String.class);
-                            resetPlayer(ctx.getSource().getSender(), playerName);
-                            return 1;
-                        })
+                        .then(Commands.literal("prefix")
+                            .executes(ctx -> {
+                                String player = ctx.getArgument("player", String.class);
+                                clearPlayerData(ctx.getSource().getSender(), player, "prefix");
+                                return 1;
+                            })
+                        )
+                        .then(Commands.literal("suffix")
+                            .executes(ctx -> {
+                                String player = ctx.getArgument("player", String.class);
+                                clearPlayerData(ctx.getSource().getSender(), player, "suffix");
+                                return 1;
+                            })
+                        )
+                        .then(Commands.literal("nickname")
+                            .executes(ctx -> {
+                                String player = ctx.getArgument("player", String.class);
+                                clearPlayerData(ctx.getSource().getSender(), player, "nickname");
+                                return 1;
+                            })
+                        )
+                        .then(Commands.literal("namecolour")
+                            .executes(ctx -> {
+                                String player = ctx.getArgument("player", String.class);
+                                clearPlayerData(ctx.getSource().getSender(), player, "namecolour");
+                                return 1;
+                            })
+                        )
+                        .then(Commands.literal("all")
+                            .executes(ctx -> {
+                                String player = ctx.getArgument("player", String.class);
+                                clearPlayerData(ctx.getSource().getSender(), player, "all");
+                                return 1;
+                            })
+                        )
                     )
                 )
-                // info subcommand (view player data)
+                // info subcommand
                 .then(Commands.literal("info")
                     .then(Commands.argument("player", StringArgumentType.word())
                         .suggests((ctx, builder) -> {
-                            // suggest online players
-                            Bukkit.getOnlinePlayers().forEach(p -> 
-                                builder.suggest(p.getName())
-                            );
+                            Bukkit.getOnlinePlayers().forEach(p -> builder.suggest(p.getName()));
                             return builder.buildFuture();
                         })
                         .executes(ctx -> {
@@ -128,213 +160,157 @@ public class AdminCommand extends BaseCommand {
                         })
                     )
                 )
-                // migrate subcommand (from old plugin)
-                .then(Commands.literal("migrate")
-                    .executes(ctx -> {
-                        startMigration(ctx.getSource().getSender());
-                        return 1;
-                    })
-                )
                 .build()
         );
     }
     
     /**
-     * show admin help
+     * Show admin help
      */
     private void showHelp(@NotNull CommandSender sender) {
-        send(sender, "<gold>==== <white>HxPrefix Admin Commands <gold>====");
-        send(sender, "<yellow>/hxadmin reload <gray>- reload configuration");
-        send(sender, "<yellow>/hxadmin tags <gray>- manage tag requests");
-        send(sender, "<yellow>/hxadmin tags approve <id> <gray>- approve a tag");
-        send(sender, "<yellow>/hxadmin tags deny <id> <reason> <gray>- deny a tag");
-        send(sender, "<yellow>/hxadmin reset <player> <gray>- reset player's customizations");
-        send(sender, "<yellow>/hxadmin info <player> <gray>- view player's data");
-        send(sender, "<yellow>/hxadmin cache <gray>- view cache statistics");
-        send(sender, "<yellow>/hxadmin cache clear <gray>- clear the cache");
-        send(sender, "<yellow>/hxadmin migrate <gray>- migrate from old plugin");
+        send(sender, "<gold>==== <white>HxPrefix Admin <gold>====");
+        send(sender, "<yellow>/hxprefix reload <gray>- reload configuration");
+        send(sender, "");
+        send(sender, "<yellow>/hxprefix set <player> prefix <text> <gray>- set prefix");
+        send(sender, "<yellow>/hxprefix set <player> suffix <text> <gray>- set suffix");
+        send(sender, "<yellow>/hxprefix set <player> nickname <text> <gray>- set nickname");
+        send(sender, "<yellow>/hxprefix set <player> namecolour <text> <gray>- set name colour");
+        send(sender, "");
+        send(sender, "<yellow>/hxprefix clear <player> <type> <gray>- clear data");
+        send(sender, "<gray>  types: prefix, suffix, nickname, namecolour, all");
+        send(sender, "");
+        send(sender, "<yellow>/hxprefix info <player> <gray>- view player data");
+        send(sender, "<yellow>/hxprefix cache <gray>- view cache statistics");
+        send(sender, "<yellow>/hxprefix cache clear <gray>- clear cache");
     }
     
     /**
-     * reload the plugin
+     * Reload the plugin
      */
     private void reloadPlugin(@NotNull CommandSender sender) {
-        send(sender, "<yellow>reloading hxprefix configuration...");
+        send(sender, "<yellow>Reloading HxPrefix configuration...");
         
         try {
             plugin.reload();
-            sendSuccess(sender, "configuration reloaded successfully");
+            sendSuccess(sender, "Configuration reloaded successfully");
             
-            // show stats
-            send(sender, "<gray>loaded:");
+            // Show stats
+            send(sender, "<gray>Loaded:");
             send(sender, "<gray>  • " + plugin.getConfigManager().getStyleConfig().getColourCount() + " colours");
             send(sender, "<gray>  • " + plugin.getConfigManager().getStyleConfig().getPrefixCount() + " prefixes");
             send(sender, "<gray>  • " + plugin.getConfigManager().getStyleConfig().getSuffixCount() + " suffixes");
             
         } catch (Exception e) {
-            sendError(sender, "failed to reload: " + e.getMessage());
-            Log.error("reload failed", e);
+            sendError(sender, "Failed to reload: " + e.getMessage());
+            Log.error("Reload failed", e);
         }
     }
     
     /**
-     * open tag management gui
+     * Set player data
      */
-    private void openTagManagement(@NotNull Player player) {
-        new TagManagementMenu(plugin, player).open(); // Remove player parameter
-    }
-    
-    /**
-     * list pending tags in console
-     */
-    private void listPendingTags(@NotNull CommandSender sender) {
-        CompletableFuture.supplyAsync(() ->
-            plugin.getDatabaseManager().getPendingTagRequests()
-        ).thenAccept(requests -> {
-            if (requests.isEmpty()) {
-                send(sender, "<yellow>no pending tag requests");
-                return;
-            }
-            
-            send(sender, "<gold>==== <white>Pending Tag Requests <gold>====");
-            for (CustomTagRequest request : requests) {
-                send(sender, "<yellow>#" + request.getId() + " <white>" + 
-                    request.getPlayerName() + " <gray>→ <white>" + 
-                    request.getRequestedTag() + " <gray>(" + 
-                    request.getAgeInDays() + " days old)");
-            }
-            send(sender, "<gray>use /hxadmin tags approve/deny <id> to manage");
-        });
-    }
-    
-    /**
-     * approve a tag request
-     */
-    private void approveTag(@NotNull CommandSender sender, int id) {
-        CompletableFuture.supplyAsync(() ->
-            plugin.getDatabaseManager().getTagRequest(id)
-        ).thenAccept(request -> {
-            if (request == null) {
-                sendError(sender, "tag request #" + id + " not found");
-                return;
-            }
-            
-            if (!request.isPending()) {
-                sendError(sender, "tag request #" + id + " is already " + request.getStatus().getValue());
-                return;
-            }
-            
-            // approve it
-            UUID approverUuid = sender instanceof Player ? 
-                ((Player) sender).getUniqueId() : null;
-            String approverName = sender.getName();
-            
-            request.approve(approverUuid, approverName);
-            
-            CompletableFuture.runAsync(() -> {
-                if (plugin.getDatabaseManager().updateTagRequest(request)) {
-                    // apply the tag to the player
-                    Player target = Bukkit.getPlayer(request.getPlayerUuid());
-                    if (target != null) {
-                        plugin.getAPI().setPrefix(target, request.getFormattedTag());
-                        send(target, "<green>✓ your custom tag has been approved!");
-                    }
-                    
-                    Scheduler.runTask(() -> {
-                        sendSuccess(sender, "approved tag request #" + id);
-                        send(sender, "<gray>tag: " + request.getRequestedTag() + " for " + request.getPlayerName());
-                    });
-                } else {
-                    Scheduler.runTask(() ->
-                        sendError(sender, "failed to update tag request")
-                    );
-                }
-            });
-        });
-    }
-    
-    /**
-     * deny a tag request
-     */
-    private void denyTag(@NotNull CommandSender sender, int id, @NotNull String reason) {
-        CompletableFuture.supplyAsync(() ->
-            plugin.getDatabaseManager().getTagRequest(id)
-        ).thenAccept(request -> {
-            if (request == null) {
-                sendError(sender, "tag request #" + id + " not found");
-                return;
-            }
-            
-            if (!request.isPending()) {
-                sendError(sender, "tag request #" + id + " is already " + request.getStatus().getValue());
-                return;
-            }
-            
-            // deny it
-            UUID denierUuid = sender instanceof Player ? 
-                ((Player) sender).getUniqueId() : null;
-            String denierName = sender.getName();
-            
-            request.deny(denierUuid, denierName, reason);
-            
-            CompletableFuture.runAsync(() -> {
-                if (plugin.getDatabaseManager().updateTagRequest(request)) {
-                    // notify the player if online
-                    Player target = Bukkit.getPlayer(request.getPlayerUuid());
-                    if (target != null) {
-                        send(target, "<red>✗ your custom tag request was denied");
-                        send(target, "<gray>reason: " + reason);
-                    }
-                    
-                    Scheduler.runTask(() -> {
-                        sendSuccess(sender, "denied tag request #" + id);
-                        send(sender, "<gray>reason: " + reason);
-                    });
-                } else {
-                    Scheduler.runTask(() ->
-                        sendError(sender, "failed to update tag request")
-                    );
-                }
-            });
-        });
-    }
-    
-    /**
-     * reset a player's customizations
-     */
-    private void resetPlayer(@NotNull CommandSender sender, @NotNull String playerName) {
+    private void setPlayerData(@NotNull CommandSender sender, @NotNull String playerName, 
+                              @NotNull String dataType, @NotNull String value) {
         Player target = Bukkit.getPlayer(playerName);
         
-        if (target != null) {
-            // online player
-            PlayerCustomization data = plugin.getAPI().getPlayerData(target);
-            if (data != null) {
-                data.clearAll();
-                plugin.getDataCache().savePlayerData(data);
-                
-                sendSuccess(sender, "reset all customizations for " + playerName);
-                send(target, "<yellow>⚠ your customizations have been reset by an admin");
-                
-                // update nametag
-                if (plugin.getNametagManager() != null) {
-                    plugin.getNametagManager().updatePlayer(target);
-                }
-            } else {
-                sendError(sender, "no data found for " + playerName);
-            }
-        } else {
-            sendError(sender, "player not online - offline reset not yet implemented");
+        if (target == null) {
+            sendError(sender, "Player not online");
+            return;
         }
+        
+        PlayerCustomization data = plugin.getAPI().getPlayerData(target);
+        if (data == null) {
+            data = plugin.getDataCache().getOrCreatePlayerData(target.getUniqueId());
+        }
+        
+        switch (dataType.toLowerCase()) {
+            case "prefix" -> {
+                data.setPrefix(value);
+                sendSuccess(sender, "Set prefix for " + playerName + " to: " + value);
+            }
+            case "suffix" -> {
+                data.setSuffix(value);
+                sendSuccess(sender, "Set suffix for " + playerName + " to: " + value);
+            }
+            case "nickname" -> {
+                data.setNickname(value);
+                sendSuccess(sender, "Set nickname for " + playerName + " to: " + value);
+            }
+            case "namecolour", "namecolor" -> {
+                data.setNameColour(value);
+                sendSuccess(sender, "Set name colour for " + playerName + " to: " + value);
+            }
+            default -> {
+                sendError(sender, "Invalid type. Use: prefix, suffix, nickname, namecolour");
+                return;
+            }
+        }
+        
+        // Save and update
+        plugin.getDataCache().savePlayerData(data);
+        
+        send(target, "<green>✓ Your " + dataType + " has been updated by an admin");
     }
     
     /**
-     * show player info
+     * Clear player data
+     */
+    private void clearPlayerData(@NotNull CommandSender sender, @NotNull String playerName, 
+                                @NotNull String dataType) {
+        Player target = Bukkit.getPlayer(playerName);
+        
+        if (target == null) {
+            sendError(sender, "Player not online");
+            return;
+        }
+        
+        PlayerCustomization data = plugin.getAPI().getPlayerData(target);
+        if (data == null) {
+            sendError(sender, "No data found for " + playerName);
+            return;
+        }
+        
+        switch (dataType.toLowerCase()) {
+            case "prefix" -> {
+                data.setPrefix(null);
+                sendSuccess(sender, "Cleared prefix for " + playerName);
+            }
+            case "suffix" -> {
+                data.setSuffix(null);
+                sendSuccess(sender, "Cleared suffix for " + playerName);
+            }
+            case "nickname" -> {
+                data.setNickname(null);
+                sendSuccess(sender, "Cleared nickname for " + playerName);
+            }
+            case "namecolour", "namecolor" -> {
+                data.setNameColour(null);
+                sendSuccess(sender, "Cleared name colour for " + playerName);
+            }
+            case "all" -> {
+                data.clearAll();
+                sendSuccess(sender, "Cleared all customizations for " + playerName);
+            }
+            default -> {
+                sendError(sender, "Invalid type. Use: prefix, suffix, nickname, namecolour, all");
+                return;
+            }
+        }
+        
+        // Save and update
+        plugin.getDataCache().savePlayerData(data);
+        
+        send(target, "<yellow>⚠ Your " + dataType + " has been cleared by an admin");
+    }
+    
+    /**
+     * Show player info
      */
     private void showPlayerInfo(@NotNull CommandSender sender, @NotNull String playerName) {
         Player target = Bukkit.getPlayer(playerName);
         
         if (target == null) {
-            sendError(sender, "player not found");
+            sendError(sender, "Player not found");
             return;
         }
         
@@ -343,67 +319,49 @@ public class AdminCommand extends BaseCommand {
             plugin.getLuckPermsHook().getPrimaryGroup(target) : "unknown";
         
         send(sender, "<gold>==== <white>" + playerName + " <gold>====");
-        send(sender, "<yellow>rank: <white>" + rank);
+        send(sender, "<yellow>Rank: <white>" + rank);
         
         if (data != null) {
-            send(sender, "<yellow>nickname: <white>" + (data.getNickname() != null ? data.getNickname() : "none"));
-            send(sender, "<yellow>colour: <white>" + (data.getNameColour() != null ? data.getNameColour() : "none"));
-            send(sender, "<yellow>prefix: <white>" + (data.getPrefix() != null ? data.getPrefix() : "none"));
-            send(sender, "<yellow>suffix: <white>" + (data.getSuffix() != null ? data.getSuffix() : "none"));
-            send(sender, "<yellow>has customizations: <white>" + data.hasCustomizations());
-            send(sender, "<yellow>pending tag: <white>" + (data.hasPendingTagRequest() ? "yes" : "no"));
+            send(sender, "<yellow>Nickname: <white>" + (data.getNickname() != null ? data.getNickname() : "none"));
+            send(sender, "<yellow>Colour: <white>" + (data.getNameColour() != null ? data.getNameColour() : "none"));
+            send(sender, "<yellow>Prefix: <white>" + (data.getPrefix() != null ? data.getPrefix() : "none"));
+            send(sender, "<yellow>Suffix: <white>" + (data.getSuffix() != null ? data.getSuffix() : "none"));
+            send(sender, "<yellow>Has customizations: <white>" + data.hasCustomizations());
         } else {
-            send(sender, "<gray>no customization data");
+            send(sender, "<gray>No customization data");
         }
     }
     
     /**
-     * show cache info
+     * Show cache info
      */
     private void showCacheInfo(@NotNull CommandSender sender) {
         int cached = plugin.getDataCache().getCacheSize();
         int online = Bukkit.getOnlinePlayers().size();
         
         send(sender, "<gold>==== <white>Cache Statistics <gold>====");
-        send(sender, "<yellow>cached players: <white>" + cached);
-        send(sender, "<yellow>online players: <white>" + online);
-        send(sender, "<yellow>cache hit rate: <white>" + plugin.getDataCache().getHitRate() + "%");
-        send(sender, "<yellow>memory usage: <white>~" + (cached * 256) + " bytes");
+        send(sender, "<yellow>Cached players: <white>" + cached);
+        send(sender, "<yellow>Online players: <white>" + online);
+        send(sender, "<yellow>Hit rate: <white>" + String.format("%.1f%%", plugin.getDataCache().getHitRate()));
+        send(sender, "<yellow>Hits: <white>" + plugin.getDataCache().getHits());
+        send(sender, "<yellow>Misses: <white>" + plugin.getDataCache().getMisses());
+        send(sender, "<yellow>Evictions: <white>" + plugin.getDataCache().getEvictions());
     }
     
     /**
-     * clear the cache
+     * Clear the cache
      */
     private void clearCache(@NotNull CommandSender sender) {
-        plugin.getDataCache().clearCache();
-        sendSuccess(sender, "cache cleared");
+        send(sender, "<yellow>Clearing cache...");
         
-        // reload online players
+        plugin.getDataCache().clearCache();
+        sendSuccess(sender, "Cache cleared");
+        
+        // Reload online players
         for (Player online : Bukkit.getOnlinePlayers()) {
             plugin.getDataCache().loadPlayer(online.getUniqueId());
         }
         
-        send(sender, "<gray>reloaded " + Bukkit.getOnlinePlayers().size() + " online players");
-    }
-    
-    /**
-     * start migration from old plugin
-     */
-    private void startMigration(@NotNull CommandSender sender) {
-        send(sender, "<yellow>starting migration from playercustomisation...");
-        
-        // this would run the migration helper
-        CompletableFuture.runAsync(() -> {
-            try {
-                int migrated = plugin.getMigrationHelper().migrate();
-                Scheduler.runTask(() -> {
-                    sendSuccess(sender, "migrated " + migrated + " players");
-                });
-            } catch (Exception e) {
-                Scheduler.runTask(() -> {
-                    sendError(sender, "migration failed: " + e.getMessage());
-                });
-            }
-        });
+        send(sender, "<gray>Reloaded " + Bukkit.getOnlinePlayers().size() + " online players");
     }
 }

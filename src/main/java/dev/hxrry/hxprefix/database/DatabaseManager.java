@@ -6,7 +6,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import dev.hxrry.hxcore.utils.Log;
 
 import dev.hxrry.hxprefix.HxPrefix;
-import dev.hxrry.hxprefix.api.models.CustomTagRequest;
 import dev.hxrry.hxprefix.api.models.PlayerCustomization;
 
 import org.jetbrains.annotations.NotNull;
@@ -14,8 +13,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -29,6 +26,9 @@ public class DatabaseManager {
     // table names
     private static final String PLAYERS_TABLE = "hxprefix_players";
     private static final String TAGS_TABLE = "hxprefix_tags";
+    
+    // schema version for migrations
+    private static final int CURRENT_SCHEMA_VERSION = 1;
     
     public DatabaseManager(@NotNull HxPrefix plugin) {
         this.plugin = plugin;
@@ -120,6 +120,7 @@ public class DatabaseManager {
                     suffix VARCHAR(50),
                     custom_tag_request VARCHAR(100),
                     last_updated BIGINT NOT NULL,
+                    last_nickname_change BIGINT DEFAULT 0,
                     INDEX idx_username (username),
                     INDEX idx_updated (last_updated)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
@@ -133,7 +134,8 @@ public class DatabaseManager {
                     prefix TEXT,
                     suffix TEXT,
                     custom_tag_request TEXT,
-                    last_updated INTEGER NOT NULL
+                    last_updated INTEGER NOT NULL,
+                    last_nickname_change INTEGER DEFAULT 0
                 )
                 """.formatted(PLAYERS_TABLE);
             
@@ -198,9 +200,64 @@ public class DatabaseManager {
      * run database migrations
      */
     private void runMigrations() {
-        // migration system would go here
-        // for now, just log
-        Log.debug("checking for database migrations...");
+        Log.debug("Checking for database migrations...");
+        
+        try (Connection conn = getConnection()) {
+            // Check if last_nickname_change column exists
+            boolean hasColumn = checkColumnExists(conn, PLAYERS_TABLE, "last_nickname_change");
+            
+            if (!hasColumn) {
+                Log.info("Running migration: Adding last_nickname_change column");
+                addNicknameCooldownColumn(conn);
+                Log.info("Migration completed successfully");
+            }
+            
+        } catch (SQLException e) {
+            Log.error("Failed to run migrations", e);
+        }
+    }
+    
+    /**
+     * Check if a column exists in a table
+     */
+    private boolean checkColumnExists(Connection conn, String tableName, String columnName) throws SQLException {
+        if (useMySQL) {
+            String sql = "SELECT COUNT(*) FROM information_schema.COLUMNS " +
+                        "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, tableName);
+                stmt.setString(2, columnName);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } else {
+            // SQLite
+            String sql = "PRAGMA table_info(" + tableName + ")";
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(sql)) {
+                while (rs.next()) {
+                    if (columnName.equals(rs.getString("name"))) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Add last_nickname_change column to existing tables
+     */
+    private void addNicknameCooldownColumn(Connection conn) throws SQLException {
+        String sql = useMySQL ?
+            "ALTER TABLE " + PLAYERS_TABLE + " ADD COLUMN last_nickname_change BIGINT DEFAULT 0" :
+            "ALTER TABLE " + PLAYERS_TABLE + " ADD COLUMN last_nickname_change INTEGER DEFAULT 0";
+        
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+        }
     }
     
     /**
@@ -238,7 +295,8 @@ public class DatabaseManager {
                         rs.getString("prefix"),
                         rs.getString("suffix"),
                         rs.getString("custom_tag_request"),
-                        rs.getLong("last_updated")
+                        rs.getLong("last_updated"),
+                        rs.getLong("last_nickname_change")
                     );
                 }
             }
@@ -256,8 +314,8 @@ public class DatabaseManager {
     public boolean savePlayerData(@NotNull PlayerCustomization data) {
         String sql = useMySQL ?
             """
-            INSERT INTO %s (uuid, username, nickname, name_colour, prefix, suffix, custom_tag_request, last_updated)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO %s (uuid, username, nickname, name_colour, prefix, suffix, custom_tag_request, last_updated, last_nickname_change)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 username = VALUES(username),
                 nickname = VALUES(nickname),
@@ -265,12 +323,13 @@ public class DatabaseManager {
                 prefix = VALUES(prefix),
                 suffix = VALUES(suffix),
                 custom_tag_request = VALUES(custom_tag_request),
-                last_updated = VALUES(last_updated)
+                last_updated = VALUES(last_updated),
+                last_nickname_change = VALUES(last_nickname_change)
             """.formatted(PLAYERS_TABLE) :
             """
             INSERT OR REPLACE INTO %s 
-            (uuid, username, nickname, name_colour, prefix, suffix, custom_tag_request, last_updated)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (uuid, username, nickname, name_colour, prefix, suffix, custom_tag_request, last_updated, last_nickname_change)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """.formatted(PLAYERS_TABLE);
         
         try (Connection conn = getConnection();
@@ -284,6 +343,7 @@ public class DatabaseManager {
             stmt.setString(6, data.getSuffix());
             stmt.setString(7, data.getCustomTagRequest());
             stmt.setLong(8, data.getLastUpdated());
+            stmt.setLong(9, data.getLastNicknameChange());
             
             stmt.executeUpdate();
             return true;
@@ -293,211 +353,7 @@ public class DatabaseManager {
             return false;
         }
     }
-    
-    // tag request operations
-    
-    /**
-     * create a new tag request
-     */
-    public boolean createTagRequest(@NotNull CustomTagRequest request) {
-        String sql = """
-            INSERT INTO %s (player_uuid, player_name, requested_tag, status, requested_at)
-            VALUES (?, ?, ?, ?, ?)
-            """.formatted(TAGS_TABLE);
-        
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            
-            stmt.setString(1, request.getPlayerUuid().toString());
-            stmt.setString(2, request.getPlayerName());
-            stmt.setString(3, request.getRequestedTag());
-            stmt.setString(4, request.getStatus().getValue());
-            stmt.setLong(5, request.getRequestedAt());
-            
-            stmt.executeUpdate();
-            
-            // get generated id
-            try (ResultSet rs = stmt.getGeneratedKeys()) {
-                if (rs.next()) {
-                    request.setId(rs.getInt(1));
-                }
-            }
-            
-            return true;
-            
-        } catch (SQLException e) {
-            Log.error("failed to create tag request", e);
-            return false;
-        }
-    }
-    
-    /**
-     * get pending tag requests
-     */
-    @NotNull
-    public List<CustomTagRequest> getPendingTagRequests() {
-        List<CustomTagRequest> requests = new ArrayList<>();
-        String sql = "SELECT * FROM " + TAGS_TABLE + " WHERE status = 'pending' ORDER BY requested_at ASC";
-        
-        try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            
-            while (rs.next()) {
-                requests.add(mapTagRequest(rs));
-            }
-            
-        } catch (SQLException e) {
-            Log.error("failed to load pending tag requests", e);
-        }
-        
-        return requests;
-    }
-    
-    /**
-     * get a specific tag request
-     */
-    @Nullable
-    public CustomTagRequest getTagRequest(int id) {
-        String sql = "SELECT * FROM " + TAGS_TABLE + " WHERE id = ?";
-        
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            
-            stmt.setInt(1, id);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return mapTagRequest(rs);
-                }
-            }
-            
-        } catch (SQLException e) {
-            Log.error("failed to load tag request " + id, e);
-        }
-        
-        return null;
-    }
-    
-    /**
-     * get pending tag request for a player
-     */
-    @Nullable
-    public CustomTagRequest getPendingTagRequest(@NotNull UUID playerUuid) {
-        String sql = "SELECT * FROM " + TAGS_TABLE + " WHERE player_uuid = ? AND status = 'pending'";
-        
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            
-            stmt.setString(1, playerUuid.toString());
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return mapTagRequest(rs);
-                }
-            }
-            
-        } catch (SQLException e) {
-            Log.error("failed to load pending tag request for " + playerUuid, e);
-        }
-        
-        return null;
-    }
-    
-    /**
-     * get last denied request for a player
-     */
-    @Nullable
-    public CustomTagRequest getLastDeniedRequest(@NotNull UUID playerUuid) {
-        String sql = "SELECT * FROM " + TAGS_TABLE + 
-                    " WHERE player_uuid = ? AND status = 'denied'" +
-                    " ORDER BY reviewed_at DESC LIMIT 1";
-        
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            
-            stmt.setString(1, playerUuid.toString());
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return mapTagRequest(rs);
-                }
-            }
-            
-        } catch (SQLException e) {
-            Log.error("failed to load denied tag request for " + playerUuid, e);
-        }
-        
-        return null;
-    }
-    
-    /**
-     * update a tag request
-     */
-    public boolean updateTagRequest(@NotNull CustomTagRequest request) {
-        String sql = """
-            UPDATE %s SET status = ?, reviewed_by = ?, reviewer_name = ?, 
-            deny_reason = ?, reviewed_at = ? WHERE id = ?
-            """.formatted(TAGS_TABLE);
-        
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            
-            stmt.setString(1, request.getStatus().getValue());
-            stmt.setString(2, request.getReviewedBy() != null ? request.getReviewedBy().toString() : null);
-            stmt.setString(3, request.getReviewerName());
-            stmt.setString(4, request.getDenyReason());
-            stmt.setLong(5, request.getReviewedAt());
-            stmt.setInt(6, request.getId());
-            
-            stmt.executeUpdate();
-            return true;
-            
-        } catch (SQLException e) {
-            Log.error("failed to update tag request " + request.getId(), e);
-            return false;
-        }
-    }
-    
-    /**
-     * cancel a tag request
-     */
-    public boolean cancelTagRequest(int id) {
-        String sql = "DELETE FROM " + TAGS_TABLE + " WHERE id = ? AND status = 'pending'";
-        
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            
-            stmt.setInt(1, id);
-            return stmt.executeUpdate() > 0;
-            
-        } catch (SQLException e) {
-            Log.error("failed to cancel tag request " + id, e);
-            return false;
-        }
-    }
-    
-    /**
-     * map result set to tag request
-     */
-    private CustomTagRequest mapTagRequest(@NotNull ResultSet rs) throws SQLException {
-        String reviewedByStr = rs.getString("reviewed_by");
-        UUID reviewedBy = reviewedByStr != null ? UUID.fromString(reviewedByStr) : null;
-        
-        return new CustomTagRequest(
-            rs.getInt("id"),
-            UUID.fromString(rs.getString("player_uuid")),
-            rs.getString("player_name"),
-            rs.getString("requested_tag"),
-            CustomTagRequest.Status.fromString(rs.getString("status")),
-            reviewedBy,
-            rs.getString("reviewer_name"),
-            rs.getString("deny_reason"),
-            rs.getLong("requested_at"),
-            rs.getLong("reviewed_at")
-        );
-    }
-    
+
     /**
      * close database connection
      */

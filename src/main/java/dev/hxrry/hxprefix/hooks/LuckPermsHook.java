@@ -23,7 +23,9 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * hook for luckperms integration
+ * Hook for LuckPerms integration
+ * 
+ * IMPORTANT: Call init() after construction to initialize the LuckPerms API!
  */
 public class LuckPermsHook {
     @SuppressWarnings("unused")
@@ -32,10 +34,14 @@ public class LuckPermsHook {
     
     public LuckPermsHook(@NotNull HxPrefix plugin) {
         this.plugin = plugin;
+        // NOTE: init() must be called after construction!
+        // We don't call it here to allow proper error handling in setupHooks()
     }
     
     /**
-     * initialize the hook
+     * Initialize the LuckPerms hook
+     * 
+     * @return true if successfully hooked into LuckPerms, false otherwise
      */
     public boolean init() {
         try {
@@ -44,20 +50,20 @@ public class LuckPermsHook {
             
             if (provider != null) {
                 luckPerms = provider.getProvider();
-                Log.info("hooked into luckperms v" + getVersion());
+                Log.info("Hooked into LuckPerms v" + getVersion());
                 return true;
             }
             
         } catch (Exception e) {
-            Log.error("failed to hook into luckperms", e);
+            Log.error("Failed to hook into LuckPerms", e);
         }
         
-        Log.warning("luckperms not found - rank features will be limited");
+        Log.warning("LuckPerms not found - rank features will be limited");
         return false;
     }
     
     /**
-     * get a player's primary group
+     * Get a player's primary group
      */
     @NotNull
     public String getPrimaryGroup(@NotNull Player player) {
@@ -65,7 +71,7 @@ public class LuckPermsHook {
     }
     
     /**
-     * get a player's primary group by uuid
+     * Get a player's primary group by UUID
      */
     @NotNull
     public String getPrimaryGroup(@NotNull UUID uuid) {
@@ -76,23 +82,23 @@ public class LuckPermsHook {
         try {
             User user = luckPerms.getUserManager().getUser(uuid);
             if (user == null) {
-                // user not loaded, try to load
+                // User not loaded, try to load
                 user = loadUser(uuid);
                 if (user == null) {
                     return "default";
                 }
             }
             
-            // get primary group
+            // Get primary group
             String primaryGroup = user.getPrimaryGroup();
             
-            // validate it exists
+            // Validate it exists
             Group group = luckPerms.getGroupManager().getGroup(primaryGroup);
             if (group != null) {
                 return primaryGroup;
             }
             
-            // fallback to first inherited group
+            // Fallback to first inherited group
             Collection<Group> inheritedGroups = user.getInheritedGroups(
                 QueryOptions.contextual(luckPerms.getContextManager().getStaticContext())
             );
@@ -102,14 +108,14 @@ public class LuckPermsHook {
             }
             
         } catch (Exception e) {
-            Log.debug("failed to get primary group for " + uuid + ": " + e.getMessage());
+            Log.debug("Failed to get primary group for " + uuid + ": " + e.getMessage());
         }
         
         return "default";
     }
     
     /**
-     * get all groups for a player
+     * Get all groups for a player
      */
     @NotNull
     public Collection<String> getGroups(@NotNull Player player) {
@@ -123,21 +129,21 @@ public class LuckPermsHook {
                 return java.util.List.of("default");
             }
             
-            // get all inherited groups
+            // Get all inherited groups
             return user.getNodes().stream()
                 .filter(node -> node instanceof InheritanceNode)
                 .map(node -> ((InheritanceNode) node).getGroupName())
                 .collect(java.util.stream.Collectors.toList());
             
         } catch (Exception e) {
-            Log.debug("failed to get groups for " + player.getName() + ": " + e.getMessage());
+            Log.debug("Failed to get groups for " + player.getName() + ": " + e.getMessage());
         }
         
         return java.util.List.of("default");
     }
     
     /**
-     * check if a player has a specific group
+     * Check if a player has a specific group
      */
     public boolean hasGroup(@NotNull Player player, @NotNull String groupName) {
         if (luckPerms == null) {
@@ -150,21 +156,21 @@ public class LuckPermsHook {
                 return false;
             }
             
-            // check for group node
+            // Check for group node
             return user.getNodes().stream()
                 .filter(node -> node instanceof InheritanceNode)
                 .map(node -> ((InheritanceNode) node).getGroupName())
                 .anyMatch(group -> group.equalsIgnoreCase(groupName));
             
         } catch (Exception e) {
-            Log.debug("failed to check group for " + player.getName() + ": " + e.getMessage());
+            Log.debug("Failed to check group for " + player.getName() + ": " + e.getMessage());
         }
         
         return false;
     }
     
     /**
-     * get display name of a group
+     * Get display name of a group
      */
     @Nullable
     public String getGroupDisplayName(@NotNull String groupName) {
@@ -178,7 +184,7 @@ public class LuckPermsHook {
                 return null;
             }
             
-            // check for display name meta
+            // Check for display name meta
             String displayName = group.getCachedData().getMetaData()
                 .getMetaValue("display-name");
             
@@ -186,23 +192,23 @@ public class LuckPermsHook {
                 return displayName;
             }
             
-            // check for prefix as fallback
+            // Check for prefix as fallback
             String prefix = group.getCachedData().getMetaData().getPrefix();
             if (prefix != null) {
-                // strip colour codes for clean display
+                // Strip colour codes for clean display
                 return stripColours(prefix);
             }
             
         } catch (Exception e) {
-            Log.debug("failed to get group display name: " + e.getMessage());
+            Log.debug("Failed to get group display name: " + e.getMessage());
         }
         
-        // return the group name itself
+        // Return the group name itself
         return groupName;
     }
     
     /**
-     * get group weight (for sorting)
+     * Get group weight (for sorting)
      */
     public int getGroupWeight(@NotNull String groupName) {
         if (luckPerms == null) {
@@ -215,18 +221,18 @@ public class LuckPermsHook {
                 return 0;
             }
             
-            // get weight from group
+            // Get weight from group
             return group.getWeight().orElse(0);
             
         } catch (Exception e) {
-            Log.debug("failed to get group weight: " + e.getMessage());
+            Log.debug("Failed to get group weight: " + e.getMessage());
         }
         
         return 0;
     }
     
     /**
-     * reload user data
+     * Reload user data
      */
     public CompletableFuture<Void> reloadUser(@NotNull UUID uuid) {
         if (luckPerms == null) {
@@ -235,26 +241,26 @@ public class LuckPermsHook {
         
         return luckPerms.getUserManager().loadUser(uuid)
             .thenAccept(user -> {
-                Log.debug("reloaded luckperms data for " + uuid);
+                Log.debug("Reloaded LuckPerms data for " + uuid);
             });
     }
     
     /**
-     * load user synchronously
+     * Load user synchronously
      */
     @Nullable
     private User loadUser(@NotNull UUID uuid) {
         try {
             CompletableFuture<User> future = luckPerms.getUserManager().loadUser(uuid);
-            return future.join(); // block until loaded
+            return future.join(); // Block until loaded
         } catch (Exception e) {
-            Log.debug("failed to load user " + uuid + ": " + e.getMessage());
+            Log.debug("Failed to load user " + uuid + ": " + e.getMessage());
             return null;
         }
     }
     
     /**
-     * get luckperms version
+     * Get LuckPerms version
      */
     @SuppressWarnings("deprecation")
     @NotNull
@@ -274,19 +280,19 @@ public class LuckPermsHook {
     }
     
     /**
-     * check if luckperms is available
+     * Check if LuckPerms is available
      */
     public boolean isAvailable() {
         return luckPerms != null;
     }
     
     /**
-     * strip colour codes from text
+     * Strip colour codes from text
      */
     private String stripColours(@NotNull String input) {
-        // strip minimessage tags
+        // Strip minimessage tags
         String stripped = input.replaceAll("<[^>]+>", "");
-        // strip legacy codes
+        // Strip legacy codes
         stripped = stripped.replaceAll("&[0-9a-fk-or]", "");
         stripped = stripped.replaceAll("§[0-9a-fk-or]", "");
         return stripped.trim();

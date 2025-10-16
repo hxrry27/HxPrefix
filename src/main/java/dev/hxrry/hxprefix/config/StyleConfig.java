@@ -15,25 +15,28 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
  * handles style configurations (colours, prefixes, suffixes)
+ * redone thread-safe implementation using ConcurrentHashMap
  */
 public class StyleConfig {
     @SuppressWarnings("unused")
     private final HxPrefix plugin;
     private final File stylesFolder;
+
+    private final Map<String, StyleOption> colours = new ConcurrentHashMap<>();
+    private final Map<String, StyleOption> prefixes = new ConcurrentHashMap<>();
+    private final Map<String, StyleOption> suffixes = new ConcurrentHashMap<>();
     
-    // loaded style options
-    private final Map<String, StyleOption> colours = new LinkedHashMap<>();
-    private final Map<String, StyleOption> prefixes = new LinkedHashMap<>();
-    private final Map<String, StyleOption> suffixes = new LinkedHashMap<>();
+    private final Map<String, List<String>> colourAccess = new ConcurrentHashMap<>();
+    private final Map<String, List<String>> prefixAccess = new ConcurrentHashMap<>();
+    private final Map<String, List<String>> suffixAccess = new ConcurrentHashMap<>();
     
-    // rank access maps
-    private final Map<String, List<String>> colourAccess = new HashMap<>();
-    private final Map<String, List<String>> prefixAccess = new HashMap<>();
-    private final Map<String, List<String>> suffixAccess = new HashMap<>();
+    // lock for reload operations to prevent concurrent modifications
+    private final Object reloadLock = new Object();
     
     public StyleConfig(@NotNull HxPrefix plugin, @NotNull File stylesFolder) {
         this.plugin = plugin;
@@ -44,27 +47,50 @@ public class StyleConfig {
      * load all style configurations
      */
     public void load() {
-        colours.clear();
-        prefixes.clear();
-        suffixes.clear();
-        colourAccess.clear();
-        prefixAccess.clear();
-        suffixAccess.clear();
-        
-        // load each style file
-        loadColours();
-        loadPrefixes();
-        loadSuffixes();
-        
-        Log.info("loaded " + colours.size() + " colours, " + 
-                prefixes.size() + " prefixes, " + 
-                suffixes.size() + " suffixes");
+        synchronized (reloadLock) {
+            // create temporary maps to load into
+            Map<String, StyleOption> tempColours = new ConcurrentHashMap<>();
+            Map<String, StyleOption> tempPrefixes = new ConcurrentHashMap<>();
+            Map<String, StyleOption> tempSuffixes = new ConcurrentHashMap<>();
+            Map<String, List<String>> tempColourAccess = new ConcurrentHashMap<>();
+            Map<String, List<String>> tempPrefixAccess = new ConcurrentHashMap<>();
+            Map<String, List<String>> tempSuffixAccess = new ConcurrentHashMap<>();
+            
+            // load into temporary maps
+            loadColours(tempColours, tempColourAccess);
+            loadPrefixes(tempPrefixes, tempPrefixAccess);
+            loadSuffixes(tempSuffixes, tempSuffixAccess);
+            
+            // atomically replace all maps at once
+            colours.clear();
+            colours.putAll(tempColours);
+            
+            prefixes.clear();
+            prefixes.putAll(tempPrefixes);
+            
+            suffixes.clear();
+            suffixes.putAll(tempSuffixes);
+            
+            colourAccess.clear();
+            colourAccess.putAll(tempColourAccess);
+            
+            prefixAccess.clear();
+            prefixAccess.putAll(tempPrefixAccess);
+            
+            suffixAccess.clear();
+            suffixAccess.putAll(tempSuffixAccess);
+            
+            Log.info("loaded " + colours.size() + " colours, " + 
+                    prefixes.size() + " prefixes, " + 
+                    suffixes.size() + " suffixes");
+        }
     }
     
     /**
-     * load colour configurations
+     * load colour configurations into provided maps
      */
-    private void loadColours() {
+    private void loadColours(Map<String, StyleOption> targetColours, 
+                            Map<String, List<String>> targetAccess) {
         File file = new File(stylesFolder, "colours.yml");
         if (!file.exists()) {
             Log.warning("colours.yml not found");
@@ -77,7 +103,7 @@ public class StyleConfig {
         ConfigurationSection groupsSection = config.getConfigurationSection("colour-groups");
         if (groupsSection != null) {
             for (String groupName : groupsSection.getKeys(false)) {
-                loadColourGroup(groupName, groupsSection.getConfigurationSection(groupName));
+                loadColourGroup(groupName, groupsSection.getConfigurationSection(groupName), targetColours);
             }
         }
         
@@ -92,22 +118,23 @@ public class StyleConfig {
                 for (String group : groups) {
                     if (group.equals("*")) {
                         // all colours
-                        colourIds.addAll(colours.keySet());
+                        colourIds.addAll(targetColours.keySet());
                     } else {
                         // specific group
-                        colourIds.addAll(getColourIdsByGroup(group));
+                        colourIds.addAll(getColourIdsByGroup(group, targetColours));
                     }
                 }
                 
-                colourAccess.put(rank.toLowerCase(), colourIds);
+                targetAccess.put(rank.toLowerCase(), Collections.unmodifiableList(colourIds));
             }
         }
     }
     
     /**
-     * load a colour group
+     * load a colour group into provided map
      */
-    private void loadColourGroup(@NotNull String groupName, @Nullable ConfigurationSection section) {
+    private void loadColourGroup(@NotNull String groupName, @Nullable ConfigurationSection section,
+                                 Map<String, StyleOption> targetColours) {
         if (section == null) return;
         
         for (String colourKey : section.getKeys(false)) {
@@ -148,20 +175,21 @@ public class StyleConfig {
                 metadata.put("seasonal", colourSection.getString("seasonal"));
             }
             
-            // create the option (ranks will be set later)
+            // create the option
             StyleOption option = new StyleOption(
                 id, displayName, type, value, material, glow,
                 description, new ArrayList<>(), metadata
             );
             
-            colours.put(id, option);
+            targetColours.put(id, option);
         }
     }
     
     /**
-     * load prefix configurations
+     * load prefix configurations into provided maps
      */
-    private void loadPrefixes() {
+    private void loadPrefixes(Map<String, StyleOption> targetPrefixes,
+                             Map<String, List<String>> targetAccess) {
         File file = new File(stylesFolder, "prefixes.yml");
         if (!file.exists()) {
             Log.warning("prefixes.yml not found");
@@ -206,7 +234,7 @@ public class StyleConfig {
                     material, glow, null, ranks, metadata
                 );
                 
-                prefixes.put(id, option);
+                targetPrefixes.put(id, option);
             }
         }
         
@@ -215,15 +243,16 @@ public class StyleConfig {
         if (accessSection != null) {
             for (String rank : accessSection.getKeys(false)) {
                 List<String> prefixIds = accessSection.getStringList(rank);
-                prefixAccess.put(rank.toLowerCase(), prefixIds);
+                targetAccess.put(rank.toLowerCase(), Collections.unmodifiableList(prefixIds));
             }
         }
     }
     
     /**
-     * load suffix configurations
+     * load suffix configurations into provided maps
      */
-    private void loadSuffixes() {
+    private void loadSuffixes(Map<String, StyleOption> targetSuffixes,
+                             Map<String, List<String>> targetAccess) {
         File file = new File(stylesFolder, "suffixes.yml");
         if (!file.exists()) {
             Log.warning("suffixes.yml not found");
@@ -268,7 +297,7 @@ public class StyleConfig {
                     material, glow, null, ranks, null
                 );
                 
-                suffixes.put(id, option);
+                targetSuffixes.put(id, option);
             }
         }
         
@@ -277,16 +306,17 @@ public class StyleConfig {
         if (accessSection != null) {
             for (String rank : accessSection.getKeys(false)) {
                 List<String> suffixIds = accessSection.getStringList(rank);
-                suffixAccess.put(rank.toLowerCase(), suffixIds);
+                targetAccess.put(rank.toLowerCase(), Collections.unmodifiableList(suffixIds));
             }
         }
     }
     
     /**
-     * get colour ids by group name
+     * get colour ids by group name from provided map
      */
-    private List<String> getColourIdsByGroup(@NotNull String groupName) {
-        return colours.keySet().stream()
+    private List<String> getColourIdsByGroup(@NotNull String groupName, 
+                                             Map<String, StyleOption> sourceColours) {
+        return sourceColours.keySet().stream()
             .filter(id -> id.startsWith(groupName + "."))
             .collect(Collectors.toList());
     }

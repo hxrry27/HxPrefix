@@ -91,7 +91,7 @@ public class ColourCommand extends BaseCommand {
      * open the colour selection menu
      */
     private void openColourMenu(@NotNull Player player) {
-        new ColourSelectionMenu(plugin, player).open(player);
+        new ColourSelectionMenu(plugin, player).open();
     }
     
     /**

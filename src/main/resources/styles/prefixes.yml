@@ -22,63 +22,63 @@ prefix-options:
     value: "<gray>[<green>VIP<gray>]"
     material: EMERALD
     glow: true
-    ranks: ["vip", "vip+", "mvp", "mvp+", "supporter", "patron", "devoted", "legend", "owner"]
+    ranks: ["*"]
     
   vipplus:
     name: "VIP+"
     value: "<gray>[<green>VIP<gold>+<gray>]"
     material: EMERALD
     glow: true
-    ranks: ["vip+", "mvp+", "devoted", "legend", "owner"]
+    ranks: ["*"]
     
   mvp:
     name: "MVP"
     value: "<gray>[<aqua>MVP<gray>]"
     material: DIAMOND
     glow: true
-    ranks: ["mvp", "mvp+", "devoted", "legend", "owner"]
+    ranks: ["*"]
     
   mvpplus:
     name: "MVP+"
     value: "<gray>[<aqua>MVP<red>+<gray>]"
     material: DIAMOND
     glow: true
-    ranks: ["mvp+", "devoted", "legend", "owner"]
+    ranks: ["*"]
     
   supporter:
     name: "SUPPORTER"
     value: "<gray>[<yellow>SUPPORTER<gray>]"
     material: GOLD_INGOT
     glow: true
-    ranks: ["supporter", "patron", "devoted", "legend", "owner"]
+    ranks: ["*"]
     
   patron:
     name: "PATRON"
     value: "<gray>[<light_purple>PATRON<gray>]"
     material: AMETHYST_SHARD
     glow: true
-    ranks: ["patron", "devoted", "legend", "owner"]
+    ranks: ["*"]
     
   devoted:
     name: "DEVOTED"
     value: "<gradient:#ff00ff:#00ffff>[DEVOTED]</gradient>"
     material: NETHER_STAR
     glow: true
-    ranks: ["devoted", "legend", "owner"]
+    ranks: ["*"]
     
   legend:
     name: "LEGEND"
     value: "<gradient:#ffd700:#ffffff>[LEGEND]</gradient>"
     material: BEACON
     glow: true
-    ranks: ["legend", "owner"]
+    ranks: ["*"]
     
   owner:
     name: "OWNER"
     value: "<gradient:#ff0000:#ffff00>[OWNER]</gradient>"
     material: BEDROCK
     glow: true
-    ranks: ["owner"]
+    ranks: ["*"]
     
   # Fun prefixes
   pro:
@@ -86,14 +86,14 @@ prefix-options:
     value: "<red>[<bold>PRO</bold>]</red>"
     material: REDSTONE_BLOCK
     glow: false
-    ranks: ["mvp", "mvp+", "patron", "devoted", "legend", "owner"]
+    ranks: ["*"]
     
   god:
     name: "GOD"
     value: "<dark_purple>[<bold>GOD</bold>]</dark_purple>"
     material: END_CRYSTAL
     glow: true
-    ranks: ["devoted", "legend", "owner"]
+    ranks: ["*"]
     
   # Seasonal prefixes
   christmas:
@@ -101,7 +101,7 @@ prefix-options:
     value: "<gradient:#ff0000:#00ff00>[CHRISTMAS]</gradient> <white>❄"
     material: SNOWBALL
     glow: true
-    ranks: ["supporter", "patron", "devoted", "legend", "owner"]
+    ranks: ["*"]
     seasonal: "christmas"
     
   spooky:
@@ -109,5 +109,5 @@ prefix-options:
     value: "<gradient:#ff6600:#000000>[SPOOKY]</gradient> 🎃"
     material: JACK_O_LANTERN
     glow: true
-    ranks: ["supporter", "patron", "devoted", "legend", "owner"]
+    ranks: ["*"]
     seasonal: "halloween"

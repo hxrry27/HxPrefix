@@ -55,15 +55,6 @@ public class PlayerListener implements Listener {
                 Log.debug("updated username for " + player.getUniqueId() + " to " + player.getName());
             }
             
-            // setup nametag on main thread
-            plugin.getServer().getScheduler().runTask(plugin, () -> {
-                if (plugin.getNametagManager() != null) {
-                    plugin.getNametagManager().setupPlayer(player);
-                }
-                
-                // check for pending tag request
-                checkPendingTagRequest(player, data);
-            });
         });
         
         // reload luckperms data if needed
@@ -84,11 +75,7 @@ public class PlayerListener implements Listener {
         if (data != null && data.hasCustomizations()) {
             plugin.getDataCache().savePlayerData(data);
         }
-        
-        // remove from nametag system
-        if (plugin.getNametagManager() != null) {
-            plugin.getNametagManager().removePlayer(player);
-        }
+
     }
     
     /**
@@ -168,33 +155,5 @@ public class PlayerListener implements Listener {
         return displayName;
     }
     
-    /**
-     * check for pending tag request
-     */
-    private void checkPendingTagRequest(@NotNull Player player, @NotNull PlayerCustomization data) {
-        if (!data.hasPendingTagRequest()) {
-            return;
-        }
-        
-        // check in database
-        CompletableFuture.supplyAsync(() ->
-            plugin.getDatabaseManager().getPendingTagRequest(player.getUniqueId())
-        ).thenAccept(request -> {
-            if (request == null) {
-                // no pending request, clear flag
-                data.setCustomTagRequest(null);
-                plugin.getDataCache().savePlayerData(data);
-                return;
-            }
-            
-            // notify player
-            plugin.getServer().getScheduler().runTask(plugin, () -> {
-                player.sendMessage(mm.deserialize(
-                    "<yellow>⚡ you have a pending tag request for '<white>" + 
-                    request.getRequestedTag() + "<yellow>' (" + 
-                    request.getAgeInDays() + " days old)"
-                ));
-            });
-        });
-    }
+    
 }
