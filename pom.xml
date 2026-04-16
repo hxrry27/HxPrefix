@@ -11,8 +11,8 @@
     <packaging>jar</packaging>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -35,12 +35,6 @@
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
         </repository>
         
-        <!-- ProtocolLib -->
-        <repository>
-            <id>dmulloy2-repo</id>
-            <url>https://repo.dmulloy2.net/repository/public/</url>
-        </repository>
-        
         <!-- LuckPerms -->
         <repository>
             <id>sonatype-snapshots</id>
@@ -53,7 +47,7 @@
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
-            <version>1.21.11-R0.1-SNAPSHOT</version>
+            <version>[26.1.2.build,)</version>
             <scope>provided</scope>
         </dependency>
         
@@ -87,14 +81,6 @@
             <scope>provided</scope>
         </dependency>
         
-        <!-- ProtocolLib -->
-        <dependency>
-            <groupId>net.dmulloy2</groupId>
-            <artifactId>ProtocolLib</artifactId>
-            <version>5.4.0</version>
-            <scope>provided</scope>
-        </dependency>
-        
         <!-- HikariCP -->
         <dependency>
             <groupId>com.zaxxer</groupId>
@@ -125,7 +111,7 @@
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-shade-plugin</artifactId>
-            <version>3.5.1</version>
+            <version>3.6.2</version>
             <executions>
                 <execution>
                     <phase>package</phase>

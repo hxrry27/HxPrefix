@@ -1,7 +1,7 @@
 name: HxPrefix
-version: 0.1.0
+version: '${project.version}'
 main: dev.hxrry.hxprefix.HxPrefix 
-api-version: "1.21"
+api-version: "26.1"
 author: hxrry
 description: a prefix, suffix and name management plugin angled at velocity networks
 website: info.hxrry.dev
@@ -9,7 +9,6 @@ website: info.hxrry.dev
 softdepend:
   - LuckPerms
   - PlaceholderAPI
-  - ProtocolLib
   - Vault
 
 commands:
