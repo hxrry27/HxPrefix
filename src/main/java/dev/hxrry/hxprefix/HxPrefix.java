@@ -93,6 +93,10 @@ public class HxPrefix extends JavaPlugin {
             
             // Initialize API
             api = new HxPrefixAPI(this);
+
+            if (getConfig().getBoolean("debug", false)) {
+                dev.hxrry.hxcore.utils.Log.setDebug(true);
+            }
             
             // Run startup tasks
             Scheduler.runTaskLater(this::postStartup, 20L);
@@ -206,6 +210,8 @@ public class HxPrefix extends JavaPlugin {
         
         // Clear and rebuild cache
         dataCache.clearCache();
+
+        
         
         // Update all online players
         getServer().getOnlinePlayers().forEach(player -> {
