@@ -12,14 +12,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-/**
- * command for managing nicknames
- */
-public class NickCommand extends BaseCommand {
+public class NickCommand extends CommandHelpers {
     
-    public NickCommand(@NotNull HxPrefix plugin) {
-        super(plugin, "nick", null, true);
-    }
+    public NickCommand(@NotNull HxPrefix plugin) { super(plugin); }
     
     public void register(HxPrefix plugin) {
         HxCommand.create("nick")

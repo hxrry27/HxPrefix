@@ -13,11 +13,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 
-public class SuffixCommand extends BaseCommand {
+public class SuffixCommand extends CommandHelpers {
     
-    public SuffixCommand(@NotNull HxPrefix plugin) {
-        super(plugin, "suffix", null, true);
-    }
+    public SuffixCommand(@NotNull HxPrefix plugin) { super(plugin); }
 
     public void register(HxPrefix plugin) {
         HxCommand.create("suffix")

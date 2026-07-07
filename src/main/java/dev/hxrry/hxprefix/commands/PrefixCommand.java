@@ -13,14 +13,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * command for managing prefixes
- */
-public class PrefixCommand extends BaseCommand {
+
+public class PrefixCommand extends CommandHelpers {
     
-    public PrefixCommand(@NotNull HxPrefix plugin) {
-        super(plugin, "prefix", null, true);
-    }
+    public PrefixCommand(@NotNull HxPrefix plugin) { super(plugin); }
     
     public void register(HxPrefix plugin) {
         HxCommand.create("prefix")

@@ -14,13 +14,9 @@ import static dev.hxrry.hxcore.commands.HxCommand.arg;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * command for managing name colours
- */
-public class ColourCommand extends BaseCommand {
+public class ColourCommand extends CommandHelpers {
     
-    public ColourCommand(@NotNull HxPrefix plugin) {
-        super(plugin, "colour", null, true); // no base permission, checked per-rank
+    public ColourCommand(@NotNull HxPrefix plugin) { super(plugin);
     }
     
     public void register(HxPrefix plugin) {

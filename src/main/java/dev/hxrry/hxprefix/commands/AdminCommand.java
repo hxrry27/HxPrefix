@@ -16,13 +16,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-/**
- * Admin command for managing the plugin
- */
-public class AdminCommand extends BaseCommand {
+public class AdminCommand extends CommandHelpers {
     
     public AdminCommand(@NotNull HxPrefix plugin) {
-        super(plugin, "hxprefix", "hxprefix.admin", false); // console allowed
+        super(plugin); // console allowed
     }
     
     public void register(HxPrefix plugin) {
