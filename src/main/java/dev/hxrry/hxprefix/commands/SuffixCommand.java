@@ -1,14 +1,10 @@
 package dev.hxrry.hxprefix.commands;
 
+import dev.hxrry.hxcore.commands.HxCommand;
 import dev.hxrry.hxprefix.HxPrefix;
 import dev.hxrry.hxprefix.api.models.StyleOption;
 import dev.hxrry.hxprefix.gui.menus.SuffixSelectionMenu;
 
-import io.papermc.paper.command.brigadier.Commands;
-
-import com.mojang.brigadier.arguments.StringArgumentType;
-
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import org.jetbrains.annotations.NotNull;
@@ -16,69 +12,27 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * command for managing suffixes
- */
+
 public class SuffixCommand extends BaseCommand {
     
     public SuffixCommand(@NotNull HxPrefix plugin) {
         super(plugin, "suffix", null, true);
     }
-    
-    @Override
-    public void register(@NotNull Commands commands) {
-        commands.register(
-            Commands.literal(name)
-                .executes(ctx -> {
-                    // open gui with no args
-                    CommandSender sender = ctx.getSource().getSender();
-                    if (!checkSender(sender)) return 0;
-                    
-                    Player player = getPlayer(sender);
-                    if (!checkSuffixPermission(player)) return 0;
-                    
-                    openSuffixMenu(player);
-                    return 1;
-                })
-                .then(Commands.argument("suffix", StringArgumentType.greedyString())
-                    .suggests((ctx, builder) -> {
-                        CommandSender sender = ctx.getSource().getSender();
-                        if (sender instanceof Player player) {
-                            // suggest available suffixes
-                            getAvailableSuffixes(player).forEach(builder::suggest);
-                        }
-                        return builder.buildFuture();
-                    })
-                    .executes(ctx -> {
-                        CommandSender sender = ctx.getSource().getSender();
-                        if (!checkSender(sender)) return 0;
-                        
-                        Player player = getPlayer(sender);
-                        if (!checkSuffixPermission(player)) return 0;
-                        
-                        String suffix = ctx.getArgument("suffix", String.class);
-                        
-                        // special cases
-                        if (suffix.equalsIgnoreCase("off") || 
-                            suffix.equalsIgnoreCase("reset") || 
-                            suffix.equalsIgnoreCase("remove") ||
-                            suffix.equalsIgnoreCase("none")) {
-                            removeSuffix(player);
-                            return 1;
-                        }
-                        
-                        // try to set the suffix
-                        setSuffix(player, suffix);
-                        return 1;
-                    })
-                )
-                .build()
-        );
+
+    public void register(HxPrefix plugin) {
+        HxCommand.create("suffix")
+
+            .executes(sender -> {
+                if (!(sender instanceof Player player)) {
+                    sendPlayerOnly(sender);
+                    return;
+                }
+                if (!checkSuffixPermission(player)) return;
+                openSuffixMenu(player);
+            })
+            .register(plugin);
     }
     
-    /**
-     * check if player has permission to use suffixes
-     */
     private boolean checkSuffixPermission(@NotNull Player player) {
         if (!hasFeaturePermission(player, "suffix")) {
             sendMessage(player, "error.no-suffix-permission", 
@@ -88,16 +42,10 @@ public class SuffixCommand extends BaseCommand {
         return true;
     }
     
-    /**
-     * open the suffix selection menu
-     */
     private void openSuffixMenu(@NotNull Player player) {
         new SuffixSelectionMenu(plugin, player).open();
     }
     
-    /**
-     * set a suffix directly
-     */
     private void setSuffix(@NotNull Player player, @NotNull String suffixInput) {
         // check if it's a valid suffix option
         List<StyleOption> available = plugin.getAPI().getAvailableSuffixes(player);

@@ -1,14 +1,11 @@
 package dev.hxrry.hxprefix.commands;
 
+import dev.hxrry.hxcore.commands.HxCommand;
+import static dev.hxrry.hxcore.commands.HxCommand.arg;
 import dev.hxrry.hxprefix.HxPrefix;
 import dev.hxrry.hxprefix.api.models.PlayerCustomization;
 
-import io.papermc.paper.command.brigadier.Commands;
-
-import com.mojang.brigadier.arguments.StringArgumentType;
-
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import org.jetbrains.annotations.NotNull;
@@ -24,59 +21,42 @@ public class NickCommand extends BaseCommand {
         super(plugin, "nick", null, true);
     }
     
-    @Override
-    public void register(@NotNull Commands commands) {
-        commands.register(
-            Commands.literal(name)
-                .executes(ctx -> {
-                    // show current nickname with no args
-                    CommandSender sender = ctx.getSource().getSender();
-                    if (!checkSender(sender)) return 0;
+    public void register(HxPrefix plugin) {
+        HxCommand.create("nick")
+
+            .executes(sender ->{
+                if (!(sender instanceof Player player)) {
+                    sendPlayerOnly(sender);
+                    return;
+                }
+                if (!checkNicknamePermission(player)) return;
+                showCurrentNickname(player);
+            })
+
+            .executes(arg("nick", List.of("off", "reset")),
+                (sender, nickname) -> {
                     
-                    Player player = getPlayer(sender);
-                    if (!checkNicknamePermission(player)) return 0;
+                    if (!(sender instanceof Player player)) {
+                        sendPlayerOnly(sender);
+                        return;
+                    }
                     
-                    showCurrentNickname(player);
-                    return 1;
+                    if (!checkNicknamePermission(player)) return;
+                    
+                    if (nickname.equalsIgnoreCase("off") || nickname.equalsIgnoreCase("reset") || nickname.equalsIgnoreCase("remove")) {
+                        removeNickname(player);
+                        return;
+                    }
+
+                    if (!checkCooldown(player)) {
+                        return;
+                    }
+
+                    setNickname(player, nickname);
                 })
-                .then(Commands.argument("nickname", StringArgumentType.word())
-                    .suggests((ctx, builder) -> {
-                        // suggest only special keywords
-                        builder.suggest("off");
-                        builder.suggest("reset");
-                        return builder.buildFuture();
-                    })
-                    .executes(ctx -> {
-                        CommandSender sender = ctx.getSource().getSender();
-                        if (!checkSender(sender)) return 0;
-                        
-                        Player player = getPlayer(sender);
-                        if (!checkNicknamePermission(player)) return 0;
-                        
-                        String nickname = ctx.getArgument("nickname", String.class);
-                        
-                        // special cases
-                        if (nickname.equalsIgnoreCase("off") || 
-                            nickname.equalsIgnoreCase("reset") || 
-                            nickname.equalsIgnoreCase("remove")) {
-                            removeNickname(player);
-                            return 1;
-                        }
-                        
-                        // check cooldown
-                        if (!checkCooldown(player)) {
-                            return 0;
-                        }
-                        
-                        // try to set the nickname
-                        setNickname(player, nickname);
-                        return 1;
-                    })
-                )
-                .build()
-        );
+                .register(plugin);
     }
-    
+
     /**
      * check if player has permission to use nicknames
      */

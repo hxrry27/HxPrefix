@@ -5,11 +5,6 @@ import dev.hxrry.hxprefix.HxPrefix;
 import dev.hxrry.hxprefix.api.models.StyleOption;
 import dev.hxrry.hxprefix.gui.menus.ColourSelectionMenu;
 
-import io.papermc.paper.command.brigadier.Commands;
-
-import com.mojang.brigadier.arguments.StringArgumentType;
-
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import org.jetbrains.annotations.NotNull;

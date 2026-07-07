@@ -1,19 +1,20 @@
 package dev.hxrry.hxprefix.commands;
 
+import dev.hxrry.hxcore.commands.HxCommand;
+import static dev.hxrry.hxcore.commands.HxCommand.*;
+import static dev.hxrry.hxcore.commands.HxCommand.PermDefault.*;
 import dev.hxrry.hxcore.utils.Log;
 
 import dev.hxrry.hxprefix.HxPrefix;
 import dev.hxrry.hxprefix.api.models.PlayerCustomization;
-
-import io.papermc.paper.command.brigadier.Commands;
-
-import com.mojang.brigadier.arguments.StringArgumentType;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 /**
  * Admin command for managing the plugin
@@ -24,144 +25,48 @@ public class AdminCommand extends BaseCommand {
         super(plugin, "hxprefix", "hxprefix.admin", false); // console allowed
     }
     
-    @Override
-    public void register(@NotNull Commands commands) {
-        commands.register(
-            Commands.literal(name)
-                .requires(source -> source.getSender().hasPermission(permission))
-                .executes(ctx -> {
-                    showHelp(ctx.getSource().getSender());
-                    return 1;
-                })
-                // reload subcommand
-                .then(Commands.literal("reload")
-                    .executes(ctx -> {
-                        reloadPlugin(ctx.getSource().getSender());
-                        return 1;
-                    })
-                )
-                // set subcommand
-                .then(Commands.literal("set")
-                    .then(Commands.argument("player", StringArgumentType.word())
-                        .suggests((ctx, builder) -> {
-                            Bukkit.getOnlinePlayers().forEach(p -> builder.suggest(p.getName()));
-                            return builder.buildFuture();
-                        })
-                        .then(Commands.literal("prefix")
-                            .then(Commands.argument("value", StringArgumentType.greedyString())
-                                .executes(ctx -> {
-                                    String player = ctx.getArgument("player", String.class);
-                                    String value = ctx.getArgument("value", String.class);
-                                    setPlayerData(ctx.getSource().getSender(), player, "prefix", value);
-                                    return 1;
-                                })
-                            )
-                        )
-                        .then(Commands.literal("suffix")
-                            .then(Commands.argument("value", StringArgumentType.greedyString())
-                                .executes(ctx -> {
-                                    String player = ctx.getArgument("player", String.class);
-                                    String value = ctx.getArgument("value", String.class);
-                                    setPlayerData(ctx.getSource().getSender(), player, "suffix", value);
-                                    return 1;
-                                })
-                            )
-                        )
-                        .then(Commands.literal("nickname")
-                            .then(Commands.argument("value", StringArgumentType.greedyString())
-                                .executes(ctx -> {
-                                    String player = ctx.getArgument("player", String.class);
-                                    String value = ctx.getArgument("value", String.class);
-                                    setPlayerData(ctx.getSource().getSender(), player, "nickname", value);
-                                    return 1;
-                                })
-                            )
-                        )
-                        .then(Commands.literal("namecolour")
-                            .then(Commands.argument("value", StringArgumentType.greedyString())
-                                .executes(ctx -> {
-                                    String player = ctx.getArgument("player", String.class);
-                                    String value = ctx.getArgument("value", String.class);
-                                    setPlayerData(ctx.getSource().getSender(), player, "namecolour", value);
-                                    return 1;
-                                })
-                            )
-                        )
-                    )
-                )
-                // clear subcommand
-                .then(Commands.literal("clear")
-                    .then(Commands.argument("player", StringArgumentType.word())
-                        .suggests((ctx, builder) -> {
-                            Bukkit.getOnlinePlayers().forEach(p -> builder.suggest(p.getName()));
-                            return builder.buildFuture();
-                        })
-                        .then(Commands.literal("prefix")
-                            .executes(ctx -> {
-                                String player = ctx.getArgument("player", String.class);
-                                clearPlayerData(ctx.getSource().getSender(), player, "prefix");
-                                return 1;
-                            })
-                        )
-                        .then(Commands.literal("suffix")
-                            .executes(ctx -> {
-                                String player = ctx.getArgument("player", String.class);
-                                clearPlayerData(ctx.getSource().getSender(), player, "suffix");
-                                return 1;
-                            })
-                        )
-                        .then(Commands.literal("nickname")
-                            .executes(ctx -> {
-                                String player = ctx.getArgument("player", String.class);
-                                clearPlayerData(ctx.getSource().getSender(), player, "nickname");
-                                return 1;
-                            })
-                        )
-                        .then(Commands.literal("namecolour")
-                            .executes(ctx -> {
-                                String player = ctx.getArgument("player", String.class);
-                                clearPlayerData(ctx.getSource().getSender(), player, "namecolour");
-                                return 1;
-                            })
-                        )
-                        .then(Commands.literal("all")
-                            .executes(ctx -> {
-                                String player = ctx.getArgument("player", String.class);
-                                clearPlayerData(ctx.getSource().getSender(), player, "all");
-                                return 1;
-                            })
-                        )
-                    )
-                )
-                // info subcommand
-                .then(Commands.literal("info")
-                    .then(Commands.argument("player", StringArgumentType.word())
-                        .suggests((ctx, builder) -> {
-                            Bukkit.getOnlinePlayers().forEach(p -> builder.suggest(p.getName()));
-                            return builder.buildFuture();
-                        })
-                        .executes(ctx -> {
-                            String playerName = ctx.getArgument("player", String.class);
-                            showPlayerInfo(ctx.getSource().getSender(), playerName);
-                            return 1;
-                        })
-                    )
-                )
-                // cache subcommand
-                .then(Commands.literal("cache")
-                    .executes(ctx -> {
-                        showCacheInfo(ctx.getSource().getSender());
-                        return 1;
-                    })
-                    .then(Commands.literal("clear")
-                        .executes(ctx -> {
-                            clearCache(ctx.getSource().getSender());
-                            return 1;
-                        })
-                    )
-                )
-                .build()
-        );
+    public void register(HxPrefix plugin) {
+        var admin = perm("hxprefix.admin", OP);
+        var playerArg = arg("player", sender -> onlineNames());
+        
+        HxCommand.create("hxprefix")
+            .permission(admin)
+
+            .executes(sender -> showHelp(sender))
+            
+                .sub("reload", admin, sender -> reloadPlugin(sender))
+                
+                .sub("info", admin, playerArg,
+                    (sender, player) -> showPlayerInfo(sender, player))
+                
+                .sub("setprefix", admin, args(playerArg, greedyArg("value")),
+                    (sender, bag) -> setPlayerData(sender, bag.get("player"), "prefix", bag.get("value")))
+
+                .sub("clearprefix", admin, playerArg,
+                    (sender, player) -> clearPlayerData(sender, player, "prefix"))
+
+                .sub("setsuffix", admin, args(playerArg, greedyArg("value")),
+                    (sender, bag) -> setPlayerData(sender, bag.get("player"), "suffix", bag.get("value")))
+
+                .sub("clearsuffix", admin, playerArg,
+                    (sender, player) -> clearPlayerData(sender, player, "suffix"))
+
+                .sub("setnick", admin, args(playerArg, greedyArg("value")),
+                    (sender, bag) -> setPlayerData(sender, bag.get("player"), "nickname", bag.get("value")))
+
+                .sub("clearnick", admin, playerArg,
+                    (sender, player) -> clearPlayerData(sender, player, "nickname"))
+
+                .sub("setcolour", admin, args(playerArg, greedyArg("value")),
+                    (sender, bag) -> setPlayerData(sender, bag.get("player"), "namecolour", bag.get("value")))
+
+                .sub("clearcolour", admin, playerArg,
+                    (sender, player) -> clearPlayerData(sender, player, "namecolour"))
+
+                .sub("clearall", admin, playerArg,
+                    (sender, player) -> clearPlayerData(sender, player, "all"))
+
+                .register(plugin);
     }
     
     /**
@@ -171,17 +76,15 @@ public class AdminCommand extends BaseCommand {
         send(sender, "<gold>==== <white>HxPrefix Admin <gold>====");
         send(sender, "<yellow>/hxprefix reload <gray>- reload configuration");
         send(sender, "");
-        send(sender, "<yellow>/hxprefix set <player> prefix <text> <gray>- set prefix");
-        send(sender, "<yellow>/hxprefix set <player> suffix <text> <gray>- set suffix");
-        send(sender, "<yellow>/hxprefix set <player> nickname <text> <gray>- set nickname");
-        send(sender, "<yellow>/hxprefix set <player> namecolour <text> <gray>- set name colour");
+        send(sender, "<yellow>/hxprefix setprefix <player> <text> <gray>- set prefix");
+        send(sender, "<yellow>/hxprefix setsuffix <player> <text> <gray>- set suffix");
+        send(sender, "<yellow>/hxprefix setnick <player> <text> <gray>- set nickname");
+        send(sender, "<yellow>/hxprefix setcolour <player> <text> <gray>- set name colour");
         send(sender, "");
-        send(sender, "<yellow>/hxprefix clear <player> <type> <gray>- clear data");
-        send(sender, "<gray>  types: prefix, suffix, nickname, namecolour, all");
+        send(sender, "<yellow>/hxprefix clearprefix|clearsuffix|clearnick|clearcolour <player>");
+        send(sender, "<yellow>/hxprefix clearall <player> <gray>- clear everything");
         send(sender, "");
         send(sender, "<yellow>/hxprefix info <player> <gray>- view player data");
-        send(sender, "<yellow>/hxprefix cache <gray>- view cache statistics");
-        send(sender, "<yellow>/hxprefix cache clear <gray>- clear cache");
     }
     
     /**
@@ -302,6 +205,11 @@ public class AdminCommand extends BaseCommand {
         
         send(target, "<yellow>⚠ Your " + dataType + " has been cleared by an admin");
     }
+
+    @SuppressWarnings("null")
+    private List<String> onlineNames() {
+        return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
+    }
     
     /**
      * Show player info
@@ -330,38 +238,5 @@ public class AdminCommand extends BaseCommand {
         } else {
             send(sender, "<gray>No customization data");
         }
-    }
-    
-    /**
-     * Show cache info
-     */
-    private void showCacheInfo(@NotNull CommandSender sender) {
-        int cached = plugin.getDataCache().getCacheSize();
-        int online = Bukkit.getOnlinePlayers().size();
-        
-        send(sender, "<gold>==== <white>Cache Statistics <gold>====");
-        send(sender, "<yellow>Cached players: <white>" + cached);
-        send(sender, "<yellow>Online players: <white>" + online);
-        send(sender, "<yellow>Hit rate: <white>" + String.format("%.1f%%", plugin.getDataCache().getHitRate()));
-        send(sender, "<yellow>Hits: <white>" + plugin.getDataCache().getHits());
-        send(sender, "<yellow>Misses: <white>" + plugin.getDataCache().getMisses());
-        send(sender, "<yellow>Evictions: <white>" + plugin.getDataCache().getEvictions());
-    }
-    
-    /**
-     * Clear the cache
-     */
-    private void clearCache(@NotNull CommandSender sender) {
-        send(sender, "<yellow>Clearing cache...");
-        
-        plugin.getDataCache().clearCache();
-        sendSuccess(sender, "Cache cleared");
-        
-        // Reload online players
-        for (Player online : Bukkit.getOnlinePlayers()) {
-            plugin.getDataCache().loadPlayer(online.getUniqueId());
-        }
-        
-        send(sender, "<gray>Reloaded " + Bukkit.getOnlinePlayers().size() + " online players");
     }
 }

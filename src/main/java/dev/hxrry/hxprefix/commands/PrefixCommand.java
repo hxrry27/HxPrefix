@@ -1,14 +1,11 @@
 package dev.hxrry.hxprefix.commands;
 
+import dev.hxrry.hxcore.commands.HxCommand;
 import dev.hxrry.hxprefix.HxPrefix;
 import dev.hxrry.hxprefix.api.models.StyleOption;
 import dev.hxrry.hxprefix.gui.menus.PrefixSelectionMenu;
 
-import io.papermc.paper.command.brigadier.Commands;
 
-import com.mojang.brigadier.arguments.StringArgumentType;
-
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import org.jetbrains.annotations.NotNull;
@@ -25,55 +22,18 @@ public class PrefixCommand extends BaseCommand {
         super(plugin, "prefix", null, true);
     }
     
-    @Override
-    public void register(@NotNull Commands commands) {
-        commands.register(
-            Commands.literal(name)
-                .executes(ctx -> {
-                    // open gui with no args
-                    CommandSender sender = ctx.getSource().getSender();
-                    if (!checkSender(sender)) return 0;
-                    
-                    Player player = getPlayer(sender);
-                    if (!checkPrefixPermission(player)) return 0;
-                    
-                    openPrefixMenu(player);
-                    return 1;
-                })
-                .then(Commands.argument("prefix", StringArgumentType.greedyString())
-                    .suggests((ctx, builder) -> {
-                        CommandSender sender = ctx.getSource().getSender();
-                        if (sender instanceof Player player) {
-                            // suggest available prefixes
-                            getAvailablePrefixes(player).forEach(builder::suggest);
-                        }
-                        return builder.buildFuture();
-                    })
-                    .executes(ctx -> {
-                        CommandSender sender = ctx.getSource().getSender();
-                        if (!checkSender(sender)) return 0;
-                        
-                        Player player = getPlayer(sender);
-                        if (!checkPrefixPermission(player)) return 0;
-                        
-                        String prefix = ctx.getArgument("prefix", String.class);
-                        
-                        // special cases
-                        if (prefix.equalsIgnoreCase("off") || 
-                            prefix.equalsIgnoreCase("reset") || 
-                            prefix.equalsIgnoreCase("remove") ||
-                            prefix.equalsIgnoreCase("none")) {
-                            removePrefix(player);
-                            return 1;
-                        }
-                        
-                        // try to set the prefix
-                        setPrefix(player, prefix);
-                        return 1;
-                    })
-                )
-                .build()
-        );
+    public void register(HxPrefix plugin) {
+        HxCommand.create("prefix")
+
+            .executes(sender -> {
+                if (!(sender instanceof Player player)) {
+                    sendPlayerOnly(sender);
+                    return;
+                }
+                if (!checkPrefixPermission(player)) return;
+                openPrefixMenu(player);
+            })
+            .register(plugin);
     }
     
     /**

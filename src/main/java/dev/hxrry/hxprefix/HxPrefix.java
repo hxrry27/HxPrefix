@@ -19,11 +19,6 @@ import dev.hxrry.hxprefix.hooks.PlaceholderAPIHook;
 import dev.hxrry.hxprefix.hooks.LuckPermsHook;
 import dev.hxrry.hxprefix.listeners.PlayerListener;
 
-import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
-import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
-import io.papermc.paper.command.brigadier.Commands;
-
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -158,21 +153,13 @@ public class HxPrefix extends JavaPlugin {
     }
 
     private void registerCommands() {
-        LifecycleEventManager<Plugin> manager = this.getLifecycleManager();
-
         new ColourCommand(this).register(this);
+        new NickCommand(this).register(this);
+        new PrefixCommand(this).register(this);
+        new SuffixCommand(this).register(this);
+        new AdminCommand(this).register(this);
 
-        manager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-            final Commands commands = event.registrar();
-            
-            // Register each command
-            new AdminCommand(this).register(commands);
-            new PrefixCommand(this).register(commands);
-            new SuffixCommand(this).register(commands);
-            new NickCommand(this).register(commands);
-            
-            Log.info("Registered 6 commands");
-        });
+        Log.info("Registered HxPrefix commands");
     }
     
     private void postStartup() {
@@ -197,9 +184,6 @@ public class HxPrefix extends JavaPlugin {
     public HxPrefixAPI getAPI() { return api; }
     @NotNull public HxCore getCore() { return core; }
     
-    /**
-     * Reload the plugin configuration
-     */
     public void reload() {
         Log.info("Reloading HxPrefix configuration...");
         
