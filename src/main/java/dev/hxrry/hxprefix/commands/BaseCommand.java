@@ -37,7 +37,7 @@ public abstract class BaseCommand {
     /**
      * register this command with paper
      */
-    public abstract void register(@NotNull Commands commands);
+    public void register(@NotNull Commands commands) {};
     
     /**
      * get the command name

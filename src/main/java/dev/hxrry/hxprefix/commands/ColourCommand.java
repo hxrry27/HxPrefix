@@ -1,5 +1,6 @@
 package dev.hxrry.hxprefix.commands;
 
+import dev.hxrry.hxcore.commands.HxCommand;
 import dev.hxrry.hxprefix.HxPrefix;
 import dev.hxrry.hxprefix.api.models.StyleOption;
 import dev.hxrry.hxprefix.gui.menus.ColourSelectionMenu;
@@ -13,6 +14,8 @@ import org.bukkit.entity.Player;
 
 import org.jetbrains.annotations.NotNull;
 
+import static dev.hxrry.hxcore.commands.HxCommand.arg;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,59 +28,36 @@ public class ColourCommand extends BaseCommand {
         super(plugin, "colour", null, true); // no base permission, checked per-rank
     }
     
-    @Override
-    public void register(@NotNull Commands commands) {
-        commands.register(
-            Commands.literal(name)
-                .executes(ctx -> {
-                    // open gui with no args
-                    CommandSender sender = ctx.getSource().getSender();
-                    if (!checkSender(sender)) return 0;
-                    
-                    Player player = getPlayer(sender);
-                    if (!checkColourPermission(player)) return 0;
-                    
-                    openColourMenu(player);
-                    return 1;
-                })
-                .then(Commands.argument("colour", StringArgumentType.word())
-                    .suggests((ctx, builder) -> {
-                        CommandSender sender = ctx.getSource().getSender();
-                        if (sender instanceof Player player) {
-                            // suggest available colours
-                            getAvailableColours(player).forEach(builder::suggest);
-                        }
-                        return builder.buildFuture();
-                    })
-                    .executes(ctx -> {
-                        CommandSender sender = ctx.getSource().getSender();
-                        if (!checkSender(sender)) return 0;
-                        
-                        Player player = getPlayer(sender);
-                        if (!checkColourPermission(player)) return 0;
-                        
-                        String colour = ctx.getArgument("colour", String.class);
-                        
-                        // special cases
-                        if (colour.equalsIgnoreCase("off") || 
-                            colour.equalsIgnoreCase("reset") || 
-                            colour.equalsIgnoreCase("remove")) {
-                            removeColour(player);
-                            return 1;
-                        }
-                        
-                        // try to set the colour
-                        setColour(player, colour);
-                        return 1;
-                    })
-                )
-                .build()
-        );
+    public void register(HxPrefix plugin) {
+        HxCommand.create("colour")
+            
+            .executes(sender -> {
+                if (!(sender instanceof Player player)) { 
+                    sendPlayerOnly(sender);
+                    return;
+                }
+                if (!checkColourPermission(player)) return;
+                openColourMenu(player);
+            })
+            
+            .executes(arg("colour", sender -> sender instanceof Player player ? getAvailableColours(player) : List.of()),
+                (sender, colour) -> {
+                    if (!(sender instanceof Player player)) {
+                        sendPlayerOnly(sender);
+                        return;
+                    }
+                    if (!checkColourPermission(player)) return;
+
+                    if (colour.equalsIgnoreCase("off") || colour.equalsIgnoreCase("reset") || colour.equalsIgnoreCase("remove")) {
+                        removeColour(player);
+                        return;
+                    }
+
+                    setColour(player, colour);
+            })
+            .register(plugin);
     }
     
-    /**
-     * check if player has permission to use colours
-     */
     private boolean checkColourPermission(@NotNull Player player) {
         if (!hasFeaturePermission(player, "colour")) {
             sendMessage(player, "error.no-colour-permission", 
@@ -87,16 +67,10 @@ public class ColourCommand extends BaseCommand {
         return true;
     }
     
-    /**
-     * open the colour selection menu
-     */
     private void openColourMenu(@NotNull Player player) {
         new ColourSelectionMenu(plugin, player).open();
     }
     
-    /**
-     * set a colour directly
-     */
     private void setColour(@NotNull Player player, @NotNull String colourInput) {
         // check if it's a valid colour option
         List<StyleOption> available = plugin.getAPI().getAvailableColours(player);

@@ -159,12 +159,14 @@ public class HxPrefix extends JavaPlugin {
 
     private void registerCommands() {
         LifecycleEventManager<Plugin> manager = this.getLifecycleManager();
+
+        new ColourCommand(this).register(this);
+
         manager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             final Commands commands = event.registrar();
             
             // Register each command
             new AdminCommand(this).register(commands);
-            new ColourCommand(this).register(commands);
             new PrefixCommand(this).register(commands);
             new SuffixCommand(this).register(commands);
             new NickCommand(this).register(commands);
