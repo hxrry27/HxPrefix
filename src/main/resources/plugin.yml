@@ -11,57 +11,19 @@ softdepend:
   - PlaceholderAPI
   - Vault
 
-commands:
-  prefix:
-    description: manage your prefix
-    usage: /<command> [prefix|off]
-    aliases: []
-    permission: hxprefix.use
-    
-  suffix:
-    description: manage your suffix
-    usage: /<command> [suffix|off]
-    aliases: []
-    permission: hxprefix.use
-    
-  colour:
-    description: change your names colour
-    usage: /<command> [colour|off]
-    aliases: [color]  # silly american spelling alias
-    permission: hxprefix.use
-    
-  nick:
-    description: set your nickname
-    usage: /<command> [nickname|off]
-    aliases: []
-    permission: hxprefix.use
-    
-  # admin command - using hxprefix for admin functions
-  hxprefix:
-    description: HxPrefix admin commands
-    usage: /<command> [reload|tags|reset|info|cache|migrate]
-    aliases: []
-    permission: hxprefix.admin
+libraries:
+  - org.xerial:sqlite-jdbc:3.46.0.0
+  - org.postgresql:postgresql:42.7.3
+  - com.zaxxer:HikariCP:5.1.0
+  - com.github.ben-manes.caffeine:caffeine:3.1.8
 
 permissions:
-  hxprefix.use:
-    description: base permission to use HxPrefix features
-    default: true
-  hxprefix.colour:
-    description: change name colour
-    default: true
-  hxprefix.prefix:
-    description: change prefix
-    default: true
-  hxprefix.suffix:
-    description: change suffix
-    default: true
-  hxprefix.nickname:
-    description: use nickname command
-    default: true
   hxprefix.tag:
     description: request custom tags
     default: true
-  hxprefix.admin:
-    description: Admin commands
+  hxprefix.staff:
+    description: staff name protection for nicknames
+    default: op
+  hxprefix.bypass.cooldown:
+    description: bypass nickname cooldown
     default: op
