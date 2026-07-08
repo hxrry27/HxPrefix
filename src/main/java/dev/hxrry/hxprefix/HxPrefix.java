@@ -74,19 +74,11 @@ public class HxPrefix extends JavaPlugin {
                 return;
             }
             
-            // Initialize cache
             dataCache = new DataCache(this, databaseManager);
-            
-            // Setup hooks
             setupHooks();
-            
-            // Register commands
+            registerPermissions();
             registerCommands();
-
-            // Register listeners
             getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
-            
-            // Initialize API
             api = new HxPrefixAPI(this);
 
             if (getConfig().getBoolean("debug", false)) {
@@ -160,6 +152,19 @@ public class HxPrefix extends JavaPlugin {
         new AdminCommand(this).register(this);
 
         Log.info("Registered HxPrefix commands");
+    }
+
+    private void registerPermissions() {
+        var pm = getServer().getPluginManager();
+        for (var perm : new org.bukkit.permissions.Permission[] {
+            new org.bukkit.permissions.Permission("hxprefix.tag", org.bukkit.permissions.PermissionDefault.TRUE),
+            new org.bukkit.permissions.Permission("hxprefix.staff", org.bukkit.permissions.PermissionDefault.OP),
+            new org.bukkit.permissions.Permission("hxprefix.bypass.cooldown", org.bukkit.permissions.PermissionDefault.OP)
+        }) {
+            if (pm.getPermission(perm.getName()) == null) {
+                pm.addPermission(perm);   // guard matters: programmatic perms survive reloads
+            }
+        }
     }
     
     private void postStartup() {

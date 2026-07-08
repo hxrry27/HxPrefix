@@ -1,0 +1,23 @@
+name: HxPrefix
+version: '${project.version}'
+main: dev.hxrry.hxprefix.HxPrefix
+loader: dev.hxrry.hxprefix.HxPrefixLoader
+api-version: "26.1"
+authors: [hxrry]
+description: a prefix, suffix and name management plugin angled at velocity networks
+website: info.hxrry.dev
+
+dependencies:
+  server:
+    LuckPerms:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    PlaceholderAPI:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    Vault:
+      load: BEFORE
+      required: false
+      join-classpath: true
